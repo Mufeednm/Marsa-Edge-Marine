@@ -1,6 +1,7 @@
 import "server-only";
 import nodemailer from "nodemailer";
 import { getServerEnvironment } from "@/config/env";
+import { formatWebsiteSenderAddress } from "@/infrastructure/email/smtp-sender-address";
 
 export async function sendContactEmail(input: {
   email: string;
@@ -45,7 +46,7 @@ function getSmtpConfiguration(): {
     throw new Error("SMTP configuration is incomplete.");
   }
   return {
-    from: SMTP_FROM,
+    from: formatWebsiteSenderAddress(SMTP_FROM),
     host: SMTP_HOST,
     password: SMTP_PASSWORD,
     port: SMTP_PORT,

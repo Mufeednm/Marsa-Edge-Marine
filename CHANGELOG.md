@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Display `Marsa Edge Marine` as the sender name for OTP, order, and website-enquiry emails while continuing to send through the configured sales mailbox.
 - Show clear `Paid`, `Pending`, `Failed`, and `Not required` payment badges in Admin Orders separately from fulfilment status.
 - Restore Stripe Checkout for customer card payments, including server-side success verification and Stripe-signed webhook completion, and remove the N-Genius customer checkout integration.
 - Add the non-destructive MySQL migration required to retain the Stripe Checkout Session ID for paid card orders.

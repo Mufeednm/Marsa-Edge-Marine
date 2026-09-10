@@ -1,5 +1,9 @@
 # Decision Log
 
+## 2026-09-10 — Use the website name as the customer-facing email sender
+
+Customer emails now use `Marsa Edge Marine <sales@...>` as their sender address. The configured sales mailbox remains the authenticated SMTP account and receiving address, while OTP, order, and website-enquiry messages have a recognizable business sender name.
+
 ## 2026-09-10 — Keep payment and fulfilment state separate in Admin Orders
 
 The Admin Orders interface now presents payment method and payment state (`Paid`, `Pending`, `Failed`, or `Not required`) independently from the fulfilment status. This gives staff the information needed to distinguish a successful card payment from an order awaiting payment without changing the existing order workflow.

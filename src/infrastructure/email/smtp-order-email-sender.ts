@@ -2,6 +2,7 @@ import "server-only";
 import nodemailer from "nodemailer";
 import type { AdminOrderDetail } from "@/domain/demo-store/demo-store-repository";
 import { getServerEnvironment } from "@/config/env";
+import { formatWebsiteSenderAddress } from "@/infrastructure/email/smtp-sender-address";
 import { formatAedFromCents } from "@/shared/utils/currency";
 
 export type OrderEmailDelivery = "sent" | "not-configured";
@@ -91,7 +92,7 @@ function getSmtpConfiguration(environment: ReturnType<typeof getServerEnvironmen
     );
   }
   return {
-    from: SMTP_FROM,
+    from: formatWebsiteSenderAddress(SMTP_FROM),
     host: SMTP_HOST,
     password: SMTP_PASSWORD,
     port: SMTP_PORT,
