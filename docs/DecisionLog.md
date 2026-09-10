@@ -1,5 +1,11 @@
 # Decision Log
 
+## 2026-09-10 — Use Stripe Checkout rather than N-Genius for card payments
+
+The customer checkout now creates a Stripe Checkout Session and sends the customer to Stripe's hosted card form. The success page retrieves the Session server-side, confirms both payment status and customer identity, then marks the matching pending order paid. A Stripe-signed webhook provides the same completion path when a customer does not return.
+
+The database migration adds `stripe_checkout_session_id` without deleting the legacy N-Genius reference column, preserving historical records while removing N-Genius from all active customer payment routes and configuration. Stripe keys remain only in ignored local environment files or the deployment secret manager.
+
 ## 2026-09-05 — Keep storefront discovery focused and responsive
 
 The storefront now removes the redundant status strip and avoids repeating the same catalogue items across several homepage rails. Customers can sort the full catalogue by featured order, newest, or price, receive visible and screen-reader add-to-cart confirmation, and search directly from the mobile header. The cart now accurately explains that delivery pricing is confirmed in checkout rather than implying it is calculated later.

@@ -1,42 +1,45 @@
 import { notFound, redirect } from "next/navigation";
 import type { ReactElement } from "react";
 import { restoreSessionUser } from "@/application/auth/auth-service";
-import { NgeniusCheckoutSuccess } from "@/features/checkout/components/ngenius-checkout-success";
+import { StripeCheckoutSuccess } from "@/features/checkout/components/stripe-checkout-success";
 import { readSessionUser } from "@/infrastructure/auth/session-cookie";
 import { createDemoStoreRepository } from "@/infrastructure/demo-store/file-demo-store-repository";
-import { completeNgeniusOrder } from "@/infrastructure/payments/ngenius-payment-completion";
-import { retrieveNgeniusOrder } from "@/infrastructure/payments/ngenius-client";
+import { getStripeClient } from "@/infrastructure/payments/stripe-client";
+import { completeStripeCheckoutSession } from "@/infrastructure/payments/stripe-payment-completion";
 
-export default async function NgeniusCheckoutSuccessPage({
+export default async function StripeCheckoutSuccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ order_id?: string; ref?: string }>;
+  searchParams: Promise<{ session_id?: string }>;
 }): Promise<ReactElement> {
-  const orderId = Number((await searchParams).order_id);
-  if (!Number.isSafeInteger(orderId) || orderId < 1) notFound();
+  const sessionId = (await searchParams).session_id;
+  if (!sessionId) notFound();
 
   const repository = createDemoStoreRepository();
   const user = await restoreSessionUser(repository, await readSessionUser());
   if (!user || user.role !== "customer") redirect("/checkout");
 
-  const order = await repository.getOrderDetail(orderId);
-  if (!order || order.customerEmail.trim().toLowerCase() !== user.email.trim().toLowerCase() || !order.paymentReference) {
+  const session = await getStripeClient().checkout.sessions.retrieve(sessionId);
+  const orderId = Number(session.metadata?.orderId);
+  if (
+    session.payment_status !== "paid" ||
+    session.client_reference_id !== user.id ||
+    !Number.isSafeInteger(orderId) ||
+    orderId < 1
+  ) {
     notFound();
   }
-  try {
-    await completeNgeniusOrder(orderId, await retrieveNgeniusOrder(order.paymentReference));
-  } catch {
-    redirect("/checkout?ngenius=verification");
-  }
-  const completedOrder = await repository.getOrderDetail(orderId);
-  if (!completedOrder || completedOrder.paymentStatus !== "paid") {
-    redirect("/checkout?ngenius=cancelled");
+  await completeStripeCheckoutSession(session);
+
+  const order = await repository.getOrderDetail(orderId);
+  if (!order || order.customerEmail.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
+    notFound();
   }
   return (
-    <NgeniusCheckoutSuccess
+    <StripeCheckoutSuccess
       customerName={user.name}
-      orderId={completedOrder.id}
-      totalAedCents={completedOrder.totalAedCents}
+      orderId={order.id}
+      totalAedCents={order.totalAedCents}
     />
   );
 }

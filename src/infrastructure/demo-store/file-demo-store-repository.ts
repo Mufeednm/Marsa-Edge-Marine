@@ -1014,38 +1014,16 @@ class SqliteDemoStoreRepository implements DemoStoreRepository {
     return affectedRows(result) > 0 || affectedRows(metadata) > 0;
   }
 
-  async attachNgeniusOrderReference(id: number, reference: string): Promise<boolean> {
+  async markStripeOrderPaid(id: number, checkoutSessionId: string): Promise<boolean> {
     await ensureDatabase();
     const database = getDatabaseConnection();
     const [result, metadata] = await database.query(
       `UPDATE orders
-       SET ngenius_order_reference = :reference
-       WHERE id = :id AND payment_method = 'ngenius' AND payment_status = 'pending'`,
-      { replacements: { id, reference } },
+       SET payment_status = 'paid', stripe_checkout_session_id = :checkoutSessionId
+       WHERE id = :id AND payment_method = 'stripe' AND payment_status = 'pending'`,
+      { replacements: { checkoutSessionId, id } },
     );
     return affectedRows(result) > 0 || affectedRows(metadata) > 0;
-  }
-
-  async markNgeniusOrderPaid(id: number, reference: string): Promise<boolean> {
-    await ensureDatabase();
-    const database = getDatabaseConnection();
-    const [result, metadata] = await database.query(
-      `UPDATE orders
-       SET payment_status = 'paid'
-       WHERE id = :id AND payment_method = 'ngenius' AND payment_status = 'pending'
-         AND ngenius_order_reference = :reference`,
-      { replacements: { id, reference } },
-    );
-    return affectedRows(result) > 0 || affectedRows(metadata) > 0;
-  }
-
-  async findOrderByNgeniusReference(reference: string): Promise<import("@/domain/demo-store/demo-store-repository").AdminOrderDetail | null> {
-    await ensureDatabase();
-    const [order] = await getDatabaseConnection().query<{ id: number }>(
-      "SELECT id FROM orders WHERE ngenius_order_reference = :reference AND payment_method = 'ngenius' LIMIT 1",
-      { replacements: { reference }, type: QueryTypes.SELECT },
-    );
-    return order ? this.getOrderDetail(order.id) : null;
   }
 
   async getOrderDetail(
@@ -1058,7 +1036,7 @@ class SqliteDemoStoreRepository implements DemoStoreRepository {
     >(
       `SELECT o.id, COALESCE(cp.name, 'Guest customer') AS customerName, COALESCE(cp.email, '') AS customerEmail,
         cp.phone AS customerPhone, o.order_date AS orderDate, o.status, o.total_aed_cents AS totalAedCents,
-        o.payment_method AS paymentMethod, o.payment_status AS paymentStatus, o.shipping_zone AS shippingZone, o.ngenius_order_reference AS paymentReference, o.delivery_address AS deliveryAddress
+        o.payment_method AS paymentMethod, o.payment_status AS paymentStatus, o.shipping_zone AS shippingZone, o.stripe_checkout_session_id AS paymentReference, o.delivery_address AS deliveryAddress
        FROM orders o LEFT JOIN customer_profiles cp ON cp.id = o.customer_profile_id WHERE o.id = :id LIMIT 1`,
       { replacements: { id }, type: QueryTypes.SELECT },
     );

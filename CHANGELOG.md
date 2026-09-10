@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Restore Stripe Checkout for customer card payments, including server-side success verification and Stripe-signed webhook completion, and remove the N-Genius customer checkout integration.
+- Add the non-destructive MySQL migration required to retain the Stripe Checkout Session ID for paid card orders.
 - Remove the redundant storefront status strip, reduce repeated homepage product rails, add customer-facing catalogue sorting, improve add-to-cart confirmation, provide mobile search, and clarify cart delivery messaging.
 - Keep cart quantity visible on product cards and product detail pages, and omit the related-products section when no related product exists.
 - Render the shared customer-support footer on product-detail pages.

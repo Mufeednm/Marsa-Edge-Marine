@@ -42,19 +42,16 @@ SMTP_FROM=your-mailbox@example.com
 
 Never commit or paste real SMTP credentials into source code, documentation, or chat.
 
-## N-Genius Online sandbox payments
+## Stripe test payments
 
-Card checkout uses N-Genius Online's hosted payment page. Add the sandbox values from the N-Genius portal to your private `.env.local` file:
+Card checkout uses Stripe Checkout. Add a Stripe **test-mode** secret key to your private `.env.local` file:
 
 ```env
-NGENIUS_ENVIRONMENT=sandbox
-NGENIUS_API_KEY=your-service-account-api-key
-NGENIUS_OUTLET_REFERENCE=your-outlet-reference
-NGENIUS_WEBHOOK_HEADER_NAME=X-Webhook-Secret
-NGENIUS_WEBHOOK_SECRET=your-random-webhook-secret
+STRIPE_SECRET_KEY=sk_test_your_private_test_key
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_signing_secret
 ```
 
-For a webhook, create an HTTPS endpoint in **Settings → Integrations → Webhooks** with the URL `https://your-public-domain/api/payments/ngenius/webhook`. Configure the same custom header name and secret in the N-Genius portal and deployment secret manager. The local `127.0.0.1` server is not publicly reachable, so N-Genius cannot deliver webhooks to it directly. The customer return page independently verifies payment with N-Genius; webhooks ensure a paid order is updated even if the customer closes the payment page.
+For production, create a Stripe webhook for `checkout.session.completed` and `checkout.session.async_payment_succeeded` at `https://your-public-domain/api/payments/stripe/webhook`, then put its signing secret in the deployment secret manager. The local server is not publicly reachable, so use the Stripe CLI to forward test webhooks locally when needed. The success page independently verifies the Checkout Session; the webhook ensures a paid order is updated even if the customer closes the Stripe page.
 
 ## Run locally
 

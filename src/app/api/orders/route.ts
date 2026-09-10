@@ -12,7 +12,7 @@ import { isValidInternationalPhone } from "@/shared/utils/phone";
 const orderSchema = z.object({
   deliveryAddress: z.string().trim().min(8).max(600),
   emirate: z.string().trim().min(2).max(120),
-  paymentMethod: z.enum(["cod", "card", "ngenius", "uae"]),
+  paymentMethod: z.enum(["cod", "card", "stripe", "uae"]),
   phone: z
     .string()
     .trim()

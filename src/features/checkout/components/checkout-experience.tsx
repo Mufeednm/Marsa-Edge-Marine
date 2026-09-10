@@ -26,7 +26,7 @@ interface CheckoutPhoneDetails {
   phone: string;
 }
 
-type CheckoutPaymentMethod = "cod" | "ngenius";
+type CheckoutPaymentMethod = "cod" | "stripe";
 
 const countryDialingCodes = [
   { code: "+971", country: "United Arab Emirates" },
@@ -82,7 +82,7 @@ export function CheckoutExperience({
   paymentNotice,
 }: {
   customer: { name: string; email: string; phone: string };
-  paymentNotice?: "cancelled" | "verification";
+  paymentNotice?: "cancelled";
 }): ReactElement {
   const [step, setStep] = useState(0);
   const [lines, setLines] = useState<StoredLine[]>([]);
@@ -108,9 +108,7 @@ export function CheckoutExperience({
   const [error, setError] = useState<string | null>(
     paymentNotice === "cancelled"
       ? "Card payment was not completed. Your basket is still here—review the details and try again when ready."
-      : paymentNotice === "verification"
-        ? "We could not verify the card payment yet. Please do not pay again until you check your order status or try again."
-        : null,
+      : null,
   );
   const [orderId, setOrderId] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>("cod");
@@ -207,7 +205,7 @@ export function CheckoutExperience({
         .filter(Boolean)
         .join(", ");
       const checkoutEndpoint =
-        paymentMethod === "ngenius" ? "/api/payments/ngenius/checkout" : "/api/orders";
+        paymentMethod === "stripe" ? "/api/payments/stripe/checkout" : "/api/orders";
       const response = await fetch(checkoutEndpoint, {
           body: JSON.stringify({
             deliveryAddress,
@@ -229,7 +227,7 @@ export function CheckoutExperience({
         setError(body.message ?? "Your order could not be saved. Please try again.");
         return;
       }
-      if (paymentMethod === "ngenius") {
+      if (paymentMethod === "stripe") {
         if (!body.checkoutUrl) {
           setError("We could not open secure card payment. Please try again.");
           return;
@@ -335,10 +333,10 @@ export function CheckoutExperience({
               >
                 {step === 3
                   ? submitting
-                    ? paymentMethod === "ngenius"
+                    ? paymentMethod === "stripe"
                       ? "Opening secure payment..."
                       : "Placing order..."
-                    : paymentMethod === "ngenius"
+                    : paymentMethod === "stripe"
                       ? "Pay securely by card"
                       : "Place order"
                   : "Continue"}
@@ -677,7 +675,7 @@ function Payment({
     <fieldset>
       <legend className="text-2xl font-black">Payment method</legend>
       <p className="mt-2 text-sm text-slate-500">
-        Choose Cash on Delivery for UAE orders or pay securely by card through N-Genius.
+        Choose Cash on Delivery for UAE orders or pay securely by card through Stripe.
       </p>
       <div className="mt-6 grid gap-3">
         <label
@@ -696,29 +694,29 @@ function Payment({
           </span>
         </label>
         <label
-          className={`flex cursor-pointer gap-3 rounded-2xl border p-4 transition ${paymentMethod === "ngenius" ? "border-[#0e7490] bg-cyan-50" : "border-slate-200 bg-white hover:border-cyan-300"}`}
+          className={`flex cursor-pointer gap-3 rounded-2xl border p-4 transition ${paymentMethod === "stripe" ? "border-[#0e7490] bg-cyan-50" : "border-slate-200 bg-white hover:border-cyan-300"}`}
         >
           <input
-            checked={paymentMethod === "ngenius"}
+            checked={paymentMethod === "stripe"}
             name="payment-method"
-            onChange={() => setPaymentMethod("ngenius")}
+            onChange={() => setPaymentMethod("stripe")}
             type="radio"
-            value="ngenius"
+            value="stripe"
           />
           <span>
             <b>Card payment</b>
             <small className="mt-1 block text-slate-500">
-              Continue to the secure N-Genius hosted payment page.
+              Continue to the secure Stripe-hosted payment page.
             </small>
           </span>
         </label>
       </div>
-      {paymentMethod === "ngenius" ? (
+      {paymentMethod === "stripe" ? (
         <p
           className="mt-3 rounded-xl border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm leading-6 text-cyan-950"
           role="status"
         >
-          Your card details are entered securely on N-Genius and are not stored by Marsa Edge Marine.
+          Your card details are entered securely on Stripe and are not stored by Marsa Edge Marine.
         </p>
       ) : (
         <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
