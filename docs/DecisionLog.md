@@ -1,5 +1,9 @@
 # Decision Log
 
+## 2026-09-10 — Keep payment and fulfilment state separate in Admin Orders
+
+The Admin Orders interface now presents payment method and payment state (`Paid`, `Pending`, `Failed`, or `Not required`) independently from the fulfilment status. This gives staff the information needed to distinguish a successful card payment from an order awaiting payment without changing the existing order workflow.
+
 ## 2026-09-10 — Use Stripe Checkout rather than N-Genius for card payments
 
 The customer checkout now creates a Stripe Checkout Session and sends the customer to Stripe's hosted card form. The success page retrieves the Session server-side, confirms both payment status and customer identity, then marks the matching pending order paid. A Stripe-signed webhook provides the same completion path when a customer does not return.

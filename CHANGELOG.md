@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Show clear `Paid`, `Pending`, `Failed`, and `Not required` payment badges in Admin Orders separately from fulfilment status.
 - Restore Stripe Checkout for customer card payments, including server-side success verification and Stripe-signed webhook completion, and remove the N-Genius customer checkout integration.
 - Add the non-destructive MySQL migration required to retain the Stripe Checkout Session ID for paid card orders.
 - Remove the redundant storefront status strip, reduce repeated homepage product rails, add customer-facing catalogue sorting, improve add-to-cart confirmation, provide mobile search, and clarify cart delivery messaging.
