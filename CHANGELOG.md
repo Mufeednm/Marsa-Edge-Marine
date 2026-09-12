@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Add a secure operations runbook covering Hostinger, GitHub deployment, SMTP/OTP, Stripe, environment variables, local setup, and incident checks.
+- Add a concise, secure website access sheet covering Hostinger, domain, email, Stripe, and environment setup.
 - Display `Marsa Edge Marine` as the sender name for OTP, order, and website-enquiry emails while continuing to send through the configured sales mailbox.
 - Show clear `Paid`, `Pending`, `Failed`, and `Not required` payment badges in Admin Orders separately from fulfilment status.
 - Restore Stripe Checkout for customer card payments, including server-side success verification and Stripe-signed webhook completion, and remove the N-Genius customer checkout integration.
