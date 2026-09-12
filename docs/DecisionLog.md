@@ -1,5 +1,9 @@
 # Decision Log
 
+## 2026-09-12 — Keep operational credentials out of the project handover document
+
+The operations runbook records the approved hosting, deployment, email, Stripe, environment-variable, and recovery procedures without storing a password or secret. Account credentials stay in the password manager and deployment secret manager so the documentation can safely remain in the repository.
+
 ## 2026-09-10 — Use the website name as the customer-facing email sender
 
 Customer emails now use `Marsa Edge Marine <sales@...>` as their sender address. The configured sales mailbox remains the authenticated SMTP account and receiving address, while OTP, order, and website-enquiry messages have a recognizable business sender name.
