@@ -11,17 +11,27 @@ Last reviewed: 12 September 2026
 | GitHub repository | https://github.com/Mufeednm/Thashreef-marine-uae |
 | Live branch | `main` |
 
+## Login details
+
+| Item | Detail |
+| --- | --- |
+| **Hostinger panel** | https://hpanel.hostinger.com |
+| Login | `marsaedgemarineadmin@gmail.com` |
+| Password | Password manager → `Marsa Edge Marine — Hostinger` |
+| **Business email / webmail** | https://mail.hostinger.com/auth/login |
+| Login | `sales@marsaedgemarine.ae` |
+| Password | Password manager → `Marsa Edge Marine — Sales SMTP` |
+| **Stripe test dashboard** | https://dashboard.stripe.com/acct_1U8xqLP6KblirbLO/test/dashboard |
+| Login and test key | Password manager → `Marsa Edge Marine — Stripe test` |
+
 ## Hostinger hosting
 
 | Item | Detail |
 | --- | --- |
-| Panel | https://hpanel.hostinger.com |
 | Plan | Business Web Hosting — 12 months |
 | Hosting expires | 15 August 2028 |
 | Current renewal quote | ₹9,189.84 total (shown 12 September 2026) |
 | Included | 50 GB storage, 3 GB RAM, 2 CPU cores, unlimited bandwidth, daily backups |
-| Login email | `marsaedgemarineadmin@gmail.com` |
-| Password | Company password manager → `Marsa Edge Marine — Hostinger` |
 
 ## Domain
 
@@ -39,7 +49,7 @@ Last reviewed: 12 September 2026
 | --- | --- |
 | Business mailbox | `sales@marsaedgemarine.ae` |
 | Webmail | https://mail.hostinger.com/auth/login |
-| Password | Company password manager → `Marsa Edge Marine — Sales SMTP` |
+| Login credential | See **Login details** above |
 | Customer-facing sender name | Marsa Edge Marine |
 | Used for | Customer sign-in OTPs, order emails, and Contact Us messages |
 
@@ -55,9 +65,15 @@ Last reviewed: 12 September 2026
 | Recommended variable | `STRIPE_WEBHOOK_SECRET` |
 | N-Genius | Removed and inactive |
 
-## Important environment variables
+## Environment details
 
-Set these only in **Hostinger → Environment variables** or the local `.env.local` file. Never put their values in GitHub or this document.
+| Location | Use |
+| --- | --- |
+| Local environment | `.env.local` |
+| Live environment | Hostinger → Website → Environment variables |
+| Password/key values | Password manager → `Marsa Edge Marine — Production environment` |
+
+Set the following names in `.env.local` for local use and in Hostinger for live use. Their values are kept in the password manager.
 
 `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `AUTH_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_APP_URL`.
 
