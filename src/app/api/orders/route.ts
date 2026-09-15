@@ -7,6 +7,7 @@ import {
   sendOrderConfirmationEmail,
   type OrderEmailDelivery,
 } from "@/infrastructure/email/smtp-order-email-sender";
+import { formatCustomerOrderNumber } from "@/domain/orders/customer-order-number";
 import { isValidInternationalPhone } from "@/shared/utils/phone";
 
 const orderSchema = z.object({
@@ -81,11 +82,17 @@ export async function POST(request: Request): Promise<NextResponse> {
       try {
         emailDelivery = await sendOrderConfirmationEmail(orderDetail);
       } catch (error) {
-        console.error(`Order confirmation email failed for order ${order.id}`, error);
+        console.error(
+          `Order confirmation email failed for ${formatCustomerOrderNumber(order.customerOrderNumber)}`,
+          error,
+        );
         emailDelivery = "failed";
       }
     }
-    return NextResponse.json({ emailDelivery, orderId: order.id });
+    return NextResponse.json({
+      customerOrderNumber: order.customerOrderNumber,
+      emailDelivery,
+    });
   } catch (error) {
     console.error("Order submission failed", error);
     return NextResponse.json(

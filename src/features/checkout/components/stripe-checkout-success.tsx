@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, type ReactElement } from "react";
+import { formatCustomerOrderNumber } from "@/domain/orders/customer-order-number";
 import { formatAedFromCents } from "@/shared/utils/currency";
 
 export function StripeCheckoutSuccess({
   customerName,
-  orderId,
+  customerOrderNumber,
   totalAedCents,
 }: {
   customerName: string;
-  orderId: number;
+  customerOrderNumber: number;
   totalAedCents: number;
 }): ReactElement {
   useEffect(() => {
@@ -29,7 +30,8 @@ export function StripeCheckoutSuccess({
         <p className="mx-auto mt-4 max-w-md text-base leading-7 text-slate-600">
           Your secure card payment of{" "}
           <strong className="text-[#0a2540]">{formatAedFromCents(totalAedCents)}</strong> was
-          received for order #{orderId}. We will email your order confirmation shortly.
+          received for {formatCustomerOrderNumber(customerOrderNumber)}. We will email your order
+          confirmation shortly.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link

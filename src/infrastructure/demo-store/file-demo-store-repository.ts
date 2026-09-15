@@ -578,75 +578,96 @@ class SqliteDemoStoreRepository implements DemoStoreRepository {
     await ensureDatabase();
     const database = getDatabaseConnection();
     const email = input.customerEmail.trim().toLowerCase();
-    let [customer] = await database.query<{ id: number }>(
-      "SELECT id FROM customer_profiles WHERE lower(email) = :email ORDER BY id DESC LIMIT 1",
-      { replacements: { email }, type: QueryTypes.SELECT },
-    );
-    if (!customer) {
-      await database.query(
-        `INSERT INTO customer_profiles (name, email, phone, role, date_joined, status)
-         VALUES (:name, :email, :phone, 'customer', :dateJoined, 'active')`,
-        {
-          replacements: {
-            dateJoined: new Date().toISOString(),
-            email,
-            name: input.customerName,
-            phone: input.phone,
-          },
-        },
-      );
-      [customer] = await database.query<{ id: number }>(
-        "SELECT id FROM customer_profiles WHERE lower(email) = :email ORDER BY id DESC LIMIT 1",
-        { replacements: { email }, type: QueryTypes.SELECT },
-      );
-    }
-    if (!customer) throw new Error("Customer profile was not created.");
     const orderDate = new Date().toISOString();
-    await database.query(
-      `INSERT INTO orders (customer_profile_id, order_date, status, shipping_zone, currency, subtotal_aed_cents, shipping_fee_aed_cents, total_aed_cents, payment_method, payment_status, delivery_address)
-       VALUES (:customerProfileId, :orderDate, 'new', :shippingZone, 'AED', :subtotal, :shipping, :total, :paymentMethod, :paymentStatus, :deliveryAddress)`,
-      {
-        replacements: {
-          customerProfileId: customer.id,
-          deliveryAddress: input.deliveryAddress,
-          orderDate,
-          paymentMethod: input.paymentMethod,
-          paymentStatus: input.paymentStatus ?? "not_required",
-          shipping: input.shippingFeeAedCents,
-          shippingZone: input.emirate,
-          subtotal: input.subtotalAedCents,
-          total: input.totalAedCents,
-        },
-      },
-    );
-    const [createdOrder] = await database.query<{ id: number }>(
-      "SELECT id FROM orders WHERE customer_profile_id = :customerProfileId ORDER BY id DESC LIMIT 1",
-      { replacements: { customerProfileId: customer.id }, type: QueryTypes.SELECT },
-    );
-    if (!createdOrder) throw new Error("Order was not created.");
-    for (const line of input.lines) {
+    return database.transaction(async (transaction: Transaction) => {
+      let [customer] = await database.query<{ id: number }>(
+        "SELECT id FROM customer_profiles WHERE lower(email) = :email ORDER BY id DESC LIMIT 1",
+        { replacements: { email }, transaction, type: QueryTypes.SELECT },
+      );
+      if (!customer) {
+        await database.query(
+          `INSERT INTO customer_profiles (name, email, phone, role, date_joined, status)
+           VALUES (:name, :email, :phone, 'customer', :dateJoined, 'active')`,
+          {
+            replacements: {
+              dateJoined: orderDate,
+              email,
+              name: input.customerName,
+              phone: input.phone,
+            },
+            transaction,
+          },
+        );
+        [customer] = await database.query<{ id: number }>(
+          "SELECT id FROM customer_profiles WHERE lower(email) = :email ORDER BY id DESC LIMIT 1",
+          { replacements: { email }, transaction, type: QueryTypes.SELECT },
+        );
+      }
+      if (!customer) throw new Error("Customer profile was not created.");
+
+      const [sequence] = await database.query<{ lastValue: number }>(
+        "SELECT last_assigned_number AS lastValue FROM order_number_sequence WHERE id = 1 FOR UPDATE",
+        { transaction, type: QueryTypes.SELECT },
+      );
+      if (!sequence) throw new Error("Order number sequence is not available.");
+      const customerOrderNumber = Number(sequence.lastValue) + 1;
+      if (!Number.isSafeInteger(customerOrderNumber)) {
+        throw new Error("A customer order number could not be allocated.");
+      }
       await database.query(
-        `INSERT INTO order_items (order_id, variant_or_product_id, product_name, product_image_url, quantity, unit_price_aed_cents, line_total_aed_cents)
-         VALUES (:orderId, 0, :name, :imageUrl, :quantity, :price, :lineTotal)`,
+        "UPDATE order_number_sequence SET last_assigned_number = :customerOrderNumber WHERE id = 1",
+        { replacements: { customerOrderNumber }, transaction },
+      );
+      await database.query(
+        `INSERT INTO orders (customer_order_number, customer_profile_id, order_date, status, shipping_zone, currency, subtotal_aed_cents, shipping_fee_aed_cents, total_aed_cents, payment_method, payment_status, delivery_address)
+         VALUES (:customerOrderNumber, :customerProfileId, :orderDate, 'new', :shippingZone, 'AED', :subtotal, :shipping, :total, :paymentMethod, :paymentStatus, :deliveryAddress)`,
         {
           replacements: {
-            lineTotal: line.unitPriceAedCents * line.quantity,
-            imageUrl: line.imageUrl,
-            name: line.name,
-            orderId: createdOrder.id,
-            price: line.unitPriceAedCents,
-            quantity: line.quantity,
+            customerOrderNumber,
+            customerProfileId: customer.id,
+            deliveryAddress: input.deliveryAddress,
+            orderDate,
+            paymentMethod: input.paymentMethod,
+            paymentStatus: input.paymentStatus ?? "not_required",
+            shipping: input.shippingFeeAedCents,
+            shippingZone: input.emirate,
+            subtotal: input.subtotalAedCents,
+            total: input.totalAedCents,
           },
+          transaction,
         },
       );
-    }
-    return {
-      id: createdOrder.id,
-      customerName: input.customerName,
-      orderDate,
-      status: "new",
-      totalAedCents: input.totalAedCents,
-    };
+      const [createdOrder] = await database.query<{ id: number }>("SELECT LAST_INSERT_ID() AS id", {
+        transaction,
+        type: QueryTypes.SELECT,
+      });
+      if (!createdOrder) throw new Error("Order was not created.");
+      for (const line of input.lines) {
+        await database.query(
+          `INSERT INTO order_items (order_id, variant_or_product_id, product_name, product_image_url, quantity, unit_price_aed_cents, line_total_aed_cents)
+         VALUES (:orderId, 0, :name, :imageUrl, :quantity, :price, :lineTotal)`,
+          {
+            replacements: {
+              lineTotal: line.unitPriceAedCents * line.quantity,
+              imageUrl: line.imageUrl,
+              name: line.name,
+              orderId: createdOrder.id,
+              price: line.unitPriceAedCents,
+              quantity: line.quantity,
+            },
+            transaction,
+          },
+        );
+      }
+      return {
+        customerOrderNumber,
+        id: createdOrder.id,
+        customerName: input.customerName,
+        orderDate,
+        status: "new",
+        totalAedCents: input.totalAedCents,
+      };
+    });
   }
 
   async findUserById(id: string): Promise<DemoUser | null> {
@@ -940,6 +961,7 @@ class SqliteDemoStoreRepository implements DemoStoreRepository {
     return getDatabaseConnection().query<AdminRecentOrder>(
       `SELECT
          o.id,
+         o.customer_order_number AS customerOrderNumber,
          COALESCE(cp.name, 'Guest customer') AS customerName,
          o.order_date AS orderDate,
          o.status,
@@ -955,7 +977,7 @@ class SqliteDemoStoreRepository implements DemoStoreRepository {
   async listOrders(limit: number): Promise<AdminOrder[]> {
     await ensureDatabase();
     return getDatabaseConnection().query<AdminOrder>(
-      `SELECT o.id, COALESCE(cp.name, 'Guest customer') AS customerName, COALESCE(cp.email, '') AS customerEmail,
+      `SELECT o.id, o.customer_order_number AS customerOrderNumber, COALESCE(cp.name, 'Guest customer') AS customerName, COALESCE(cp.email, '') AS customerEmail,
         o.order_date AS orderDate, o.status, o.total_aed_cents AS totalAedCents, o.payment_method AS paymentMethod,
         o.payment_status AS paymentStatus,
         o.shipping_zone AS shippingZone, cp.phone AS customerPhone
@@ -975,7 +997,7 @@ class SqliteDemoStoreRepository implements DemoStoreRepository {
     const orders = await database.query<
       import("@/domain/demo-store/demo-store-repository").AdminOrderDetail
     >(
-      `SELECT o.id, COALESCE(cp.name, 'Customer') AS customerName, COALESCE(cp.email, '') AS customerEmail,
+      `SELECT o.id, o.customer_order_number AS customerOrderNumber, COALESCE(cp.name, 'Customer') AS customerName, COALESCE(cp.email, '') AS customerEmail,
         cp.phone AS customerPhone, o.order_date AS orderDate, o.status, o.total_aed_cents AS totalAedCents,
         o.payment_method AS paymentMethod, o.payment_status AS paymentStatus, o.shipping_zone AS shippingZone, o.delivery_address AS deliveryAddress
        FROM orders o INNER JOIN customer_profiles cp ON cp.id = o.customer_profile_id
@@ -1008,7 +1030,7 @@ class SqliteDemoStoreRepository implements DemoStoreRepository {
     const [result, metadata] = await getDatabaseConnection().query(
       "UPDATE orders SET status = :status WHERE id = :id AND status = 'new'",
       {
-      replacements: { id, status },
+        replacements: { id, status },
       },
     );
     return affectedRows(result) > 0 || affectedRows(metadata) > 0;
@@ -1034,7 +1056,7 @@ class SqliteDemoStoreRepository implements DemoStoreRepository {
     const [order] = await database.query<
       import("@/domain/demo-store/demo-store-repository").AdminOrderDetail
     >(
-      `SELECT o.id, COALESCE(cp.name, 'Guest customer') AS customerName, COALESCE(cp.email, '') AS customerEmail,
+      `SELECT o.id, o.customer_order_number AS customerOrderNumber, COALESCE(cp.name, 'Guest customer') AS customerName, COALESCE(cp.email, '') AS customerEmail,
         cp.phone AS customerPhone, o.order_date AS orderDate, o.status, o.total_aed_cents AS totalAedCents,
         o.payment_method AS paymentMethod, o.payment_status AS paymentStatus, o.shipping_zone AS shippingZone, o.stripe_checkout_session_id AS paymentReference, o.delivery_address AS deliveryAddress
        FROM orders o LEFT JOIN customer_profiles cp ON cp.id = o.customer_profile_id WHERE o.id = :id LIMIT 1`,

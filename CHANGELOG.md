@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add immutable, sequential customer-facing order numbers in the `10000` range while retaining internal database IDs for application and payment processing.
+- Show the same customer order reference in checkout confirmation, customer and administrator orders, order emails, parcel labels, and PDF order details.
 - Display `Marsa Edge Marine` as the sender name for OTP, order, and website-enquiry emails while continuing to send through the configured sales mailbox.
 - Show clear `Paid`, `Pending`, `Failed`, and `Not required` payment badges in Admin Orders separately from fulfilment status.
 - Restore Stripe Checkout for customer card payments, including server-side success verification and Stripe-signed webhook completion, and remove the N-Genius customer checkout integration.

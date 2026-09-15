@@ -2,6 +2,7 @@
 
 import { useState, useTransition, type ReactElement, type ReactNode } from "react";
 import type { AdminOrder, AdminOrderDetail } from "@/domain/demo-store/demo-store-repository";
+import { formatCustomerOrderNumber } from "@/domain/orders/customer-order-number";
 import { updateOrderStatusAction } from "@/features/orders/order.actions";
 import { formatAedFromCents } from "@/shared/utils/currency";
 
@@ -40,7 +41,9 @@ export function AdminOrdersPage({
             {orders.map((order) => (
               <tr className="hover:bg-slate-50" key={order.id}>
                 <td className="px-5 py-4">
-                  <p className="font-bold text-slate-800">#{order.id}</p>
+                  <p className="font-bold text-slate-800">
+                    {formatCustomerOrderNumber(order.customerOrderNumber)}
+                  </p>
                   <p className="mt-1 text-xs text-slate-500">
                     {new Intl.DateTimeFormat("en-AE", {
                       dateStyle: "medium",
@@ -59,11 +62,13 @@ export function AdminOrdersPage({
                 <td className="px-5 py-4 font-bold text-slate-800">
                   {formatAedFromCents(order.totalAedCents)}
                 </td>
-                <td className="px-5 py-4"><OrderStatus status={order.status} /></td>
+                <td className="px-5 py-4">
+                  <OrderStatus status={order.status} />
+                </td>
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-2">
                     <button
-                      aria-label={`View order ${order.id}`}
+                      aria-label={`View ${formatCustomerOrderNumber(order.customerOrderNumber)}`}
                       className="icon-button"
                       onClick={() => setSelectedOrderId(order.id)}
                       type="button"
@@ -71,7 +76,7 @@ export function AdminOrdersPage({
                       <ViewIcon />
                     </button>
                     <a
-                      aria-label={`Print parcel label for order ${order.id}`}
+                      aria-label={`Print parcel label for ${formatCustomerOrderNumber(order.customerOrderNumber)}`}
                       className="icon-button"
                       href={`/api/admin/orders/${order.id}/label`}
                       rel="noopener noreferrer"
@@ -109,40 +114,94 @@ function OrderDetailModal({
   order: AdminOrderDetail;
 }): ReactElement {
   return (
-    <div aria-modal="true" className="fixed inset-0 z-50 flex items-end bg-slate-950/55 p-0 sm:items-center sm:justify-center sm:p-6" role="dialog">
-      <section aria-labelledby="order-detail-title" className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[2rem] bg-[#f4f8fa] p-5 shadow-2xl sm:max-w-3xl sm:rounded-[2rem] sm:p-8">
+    <div
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-end bg-slate-950/55 p-0 sm:items-center sm:justify-center sm:p-6"
+      role="dialog"
+    >
+      <section
+        aria-labelledby="order-detail-title"
+        className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[2rem] bg-[#f4f8fa] p-5 shadow-2xl sm:max-w-3xl sm:rounded-[2rem] sm:p-8"
+      >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold tracking-[0.2em] text-[#f05a28] uppercase">Order #{order.id}</p>
-            <h2 className="mt-1 text-2xl font-extrabold text-[#102846]" id="order-detail-title">Customer and delivery details</h2>
+            <p className="text-xs font-bold tracking-[0.2em] text-[#f05a28] uppercase">
+              {formatCustomerOrderNumber(order.customerOrderNumber)}
+            </p>
+            <h2 className="mt-1 text-2xl font-extrabold text-[#102846]" id="order-detail-title">
+              Customer and delivery details
+            </h2>
           </div>
-          <button aria-label="Close order details" className="icon-button bg-white" onClick={close} type="button"><CloseIcon /></button>
+          <button
+            aria-label="Close order details"
+            className="icon-button bg-white"
+            onClick={close}
+            type="button"
+          >
+            <CloseIcon />
+          </button>
         </div>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <DetailCard label="Customer">
             <p className="font-bold text-slate-800">{order.customerName}</p>
             <p className="mt-1 break-all text-sm text-slate-600">{order.customerEmail}</p>
-            <p className="mt-1 text-sm text-slate-600">{order.customerPhone || "No mobile number saved"}</p>
+            <p className="mt-1 text-sm text-slate-600">
+              {order.customerPhone || "No mobile number saved"}
+            </p>
           </DetailCard>
-          <DetailCard label="Delivery address"><p className="text-sm leading-6 text-slate-700">{order.deliveryAddress || order.shippingZone}</p></DetailCard>
-          <DetailCard label="Payment"><PaymentSummary order={order} /></DetailCard>
-          <DetailCard label="Fulfilment"><OrderStatus status={order.status} /></DetailCard>
+          <DetailCard label="Delivery address">
+            <p className="text-sm leading-6 text-slate-700">
+              {order.deliveryAddress || order.shippingZone}
+            </p>
+          </DetailCard>
+          <DetailCard label="Payment">
+            <PaymentSummary order={order} />
+          </DetailCard>
+          <DetailCard label="Fulfilment">
+            <OrderStatus status={order.status} />
+          </DetailCard>
         </div>
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3"><h3 className="font-bold text-[#102846]">Order items</h3><OrderStatus status={order.status} /></div>
+          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+            <h3 className="font-bold text-[#102846]">Order items</h3>
+            <OrderStatus status={order.status} />
+          </div>
           <div className="divide-y divide-slate-100">
             {order.items.map((item) => (
               <div className="flex items-start justify-between gap-4 px-4 py-4" key={item.id}>
-                <div><p className="font-semibold text-slate-800">{item.name}</p><p className="mt-1 text-sm text-slate-500">Qty {item.quantity} × {formatAedFromCents(item.unitPriceAedCents)}</p></div>
-                <strong className="whitespace-nowrap text-slate-900">{formatAedFromCents(item.lineTotalAedCents)}</strong>
+                <div>
+                  <p className="font-semibold text-slate-800">{item.name}</p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Qty {item.quantity} × {formatAedFromCents(item.unitPriceAedCents)}
+                  </p>
+                </div>
+                <strong className="whitespace-nowrap text-slate-900">
+                  {formatAedFromCents(item.lineTotalAedCents)}
+                </strong>
               </div>
             ))}
           </div>
-          <div className="flex justify-between border-t border-slate-200 px-4 py-4 font-bold text-[#102846]"><span>Total</span><span>{formatAedFromCents(order.totalAedCents)}</span></div>
+          <div className="flex justify-between border-t border-slate-200 px-4 py-4 font-bold text-[#102846]">
+            <span>Total</span>
+            <span>{formatAedFromCents(order.totalAedCents)}</span>
+          </div>
         </div>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <a className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0e568f] px-4 text-sm font-bold text-white transition hover:bg-[#0a4674] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0e568f]" href={`/api/admin/orders/${order.id}/label`} rel="noopener noreferrer" target="_blank"><PrintIcon /> Print parcel label</a>
-          <button className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700" onClick={close} type="button">Close</button>
+          <a
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#0e568f] px-4 text-sm font-bold text-white transition hover:bg-[#0a4674] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0e568f]"
+            href={`/api/admin/orders/${order.id}/label`}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <PrintIcon /> Print parcel label
+          </a>
+          <button
+            className="min-h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700"
+            onClick={close}
+            type="button"
+          >
+            Close
+          </button>
         </div>
       </section>
     </div>
@@ -150,28 +209,86 @@ function OrderDetailModal({
 }
 
 function PaymentSummary({ order }: { order: AdminOrder }): ReactElement {
-  return <div className="space-y-1.5"><p className="font-semibold text-slate-800">{paymentMethodLabel(order.paymentMethod)}</p><PaymentStatus status={order.paymentStatus} /></div>;
+  return (
+    <div className="space-y-1.5">
+      <p className="font-semibold text-slate-800">{paymentMethodLabel(order.paymentMethod)}</p>
+      <PaymentStatus status={order.paymentStatus} />
+    </div>
+  );
 }
 
 function PaymentStatus({ status }: { status: AdminOrder["paymentStatus"] }): ReactElement {
-  const styles = { failed: "bg-rose-50 text-rose-700", not_required: "bg-slate-100 text-slate-700", paid: "bg-emerald-50 text-emerald-700", pending: "bg-amber-50 text-amber-800" };
-  const labels = { failed: "Failed", not_required: "Not required", paid: "Paid", pending: "Pending" };
-  return <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${styles[status]}`}>{labels[status]}</span>;
+  const styles = {
+    failed: "bg-rose-50 text-rose-700",
+    not_required: "bg-slate-100 text-slate-700",
+    paid: "bg-emerald-50 text-emerald-700",
+    pending: "bg-amber-50 text-amber-800",
+  };
+  const labels = {
+    failed: "Failed",
+    not_required: "Not required",
+    paid: "Paid",
+    pending: "Pending",
+  };
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${styles[status]}`}>
+      {labels[status]}
+    </span>
+  );
 }
 
 function OrderStatus({ status }: { status: string }): ReactElement {
-  const style = status === "accepted" ? "bg-emerald-50 text-emerald-700" : status === "rejected" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-700";
-  return <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${style}`}>{status}</span>;
+  const style =
+    status === "accepted"
+      ? "bg-emerald-50 text-emerald-700"
+      : status === "rejected"
+        ? "bg-rose-50 text-rose-700"
+        : "bg-amber-50 text-amber-700";
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${style}`}>
+      {status}
+    </span>
+  );
 }
 
 function DetailCard({ children, label }: { children: ReactNode; label: string }): ReactElement {
-  return <article className="rounded-2xl border border-slate-200 bg-white p-4"><p className="text-xs font-bold tracking-wide text-slate-500 uppercase">{label}</p><div className="mt-3">{children}</div></article>;
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-4">
+      <p className="text-xs font-bold tracking-wide text-slate-500 uppercase">{label}</p>
+      <div className="mt-3">{children}</div>
+    </article>
+  );
 }
 
 function OrderActions({ id }: { id: number }): ReactElement {
   const [pending, startTransition] = useTransition();
-  const submit = (status: "accepted" | "rejected") => startTransition(() => { const data = new FormData(); data.set("id", String(id)); data.set("status", status); void updateOrderStatusAction(data); });
-  return <div className="flex gap-2"><button className="min-h-11 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white disabled:bg-slate-300" disabled={pending} onClick={() => submit("accepted")} type="button">Accept</button><button className="min-h-11 rounded-xl border border-rose-200 px-3 text-xs font-bold text-rose-700 disabled:text-slate-400" disabled={pending} onClick={() => submit("rejected")} type="button">Reject</button></div>;
+  const submit = (status: "accepted" | "rejected") =>
+    startTransition(() => {
+      const data = new FormData();
+      data.set("id", String(id));
+      data.set("status", status);
+      void updateOrderStatusAction(data);
+    });
+  return (
+    <div className="flex gap-2">
+      <button
+        className="min-h-11 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white disabled:bg-slate-300"
+        disabled={pending}
+        onClick={() => submit("accepted")}
+        type="button"
+      >
+        Accept
+      </button>
+      <button
+        className="min-h-11 rounded-xl border border-rose-200 px-3 text-xs font-bold text-rose-700 disabled:text-slate-400"
+        disabled={pending}
+        onClick={() => submit("rejected")}
+        type="button"
+      >
+        Reject
+      </button>
+    </div>
+  );
 }
 
 function paymentMethodLabel(paymentMethod: string): string {
@@ -180,6 +297,50 @@ function paymentMethodLabel(paymentMethod: string): string {
   return paymentMethod;
 }
 
-function ViewIcon(): ReactElement { return <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>; }
-function PrintIcon(): ReactElement { return <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4V9h16v9h-2M6 14h12v7H6z" strokeLinecap="round" strokeLinejoin="round" /></svg>; }
-function CloseIcon(): ReactElement { return <svg aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>; }
+function ViewIcon(): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className="size-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="2.5" />
+    </svg>
+  );
+}
+function PrintIcon(): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className="size-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="M6 9V3h12v6M6 18H4V9h16v9h-2M6 14h12v7H6z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+function CloseIcon(): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className="size-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <path d="m6 6 12 12M18 6 6 18" />
+    </svg>
+  );
+}

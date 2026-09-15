@@ -3,11 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdminUser } from "@/application/auth/auth-service";
+import { formatCustomerOrderNumber } from "@/domain/orders/customer-order-number";
 import { readSessionUser } from "@/infrastructure/auth/session-cookie";
 import { createDemoStoreRepository } from "@/infrastructure/demo-store/file-demo-store-repository";
 import { sendOrderStatusEmail } from "@/infrastructure/email/smtp-order-email-sender";
 
-const statusSchema = z.object({ id: z.coerce.number().int().positive(), status: z.enum(["accepted", "rejected"]) });
+const statusSchema = z.object({
+  id: z.coerce.number().int().positive(),
+  status: z.enum(["accepted", "rejected"]),
+});
 
 export async function updateOrderStatusAction(formData: FormData): Promise<void> {
   const parsed = statusSchema.safeParse({ id: formData.get("id"), status: formData.get("status") });
@@ -22,7 +26,10 @@ export async function updateOrderStatusAction(formData: FormData): Promise<void>
     try {
       await sendOrderStatusEmail(order, parsed.data.status);
     } catch (error) {
-      console.error(`Order status email failed for order ${order.id}`, error);
+      console.error(
+        `Order status email failed for ${formatCustomerOrderNumber(order.customerOrderNumber)}`,
+        error,
+      );
     }
   }
   revalidatePath("/admin");

@@ -1,5 +1,11 @@
 # Decision Log
 
+## 2026-09-15 — Use a stored customer-facing order number
+
+Each order now receives an immutable sequential customer reference, starting in the `10000` range. The internal `orders.id` remains unchanged and continues to be used for database relations, authorization, and Stripe metadata.
+
+Existing records are assigned `10000 + internal ID` during the non-destructive database migration. New orders reserve the next number from a locked sequence within the same transaction that creates the order, so a customer reference is unique, stable, and never inferred from the internal ID in customer-facing views.
+
 ## 2026-09-10 — Use the website name as the customer-facing email sender
 
 Customer emails now use `Marsa Edge Marine <sales@...>` as their sender address. The configured sales mailbox remains the authenticated SMTP account and receiving address, while OTP, order, and website-enquiry messages have a recognizable business sender name.

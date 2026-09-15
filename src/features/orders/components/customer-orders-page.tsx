@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactElement } from "react";
 import type { AdminOrderDetail } from "@/domain/demo-store/demo-store-repository";
+import { formatCustomerOrderNumber } from "@/domain/orders/customer-order-number";
 import { Footer } from "@/features/storefront/components/storefront-experience";
 import { formatAedFromCents } from "@/shared/utils/currency";
 
@@ -90,7 +91,9 @@ export function CustomerOrdersPage({
                       <div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-lg font-black">Order #{order.id}</p>
+                            <p className="text-lg font-black">
+                              {formatCustomerOrderNumber(order.customerOrderNumber)}
+                            </p>
                             <span className={statusClass(order.status)}>
                               {formatStatus(order.status)}
                             </span>

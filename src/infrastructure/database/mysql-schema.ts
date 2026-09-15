@@ -1,5 +1,6 @@
 import "server-only";
-import type { Sequelize } from "sequelize";
+import { QueryTypes, type Sequelize } from "sequelize";
+import { CUSTOMER_ORDER_NUMBER_START } from "@/domain/orders/customer-order-number";
 
 /**
  * Creates the production schema without relying on SQLite-only DDL. Each
@@ -69,12 +70,17 @@ export async function initializeMySqlSchema(database: Sequelize): Promise<void> 
       UNIQUE KEY customer_profiles_phone_unique (phone)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     `CREATE TABLE IF NOT EXISTS orders (
-      id INT AUTO_INCREMENT PRIMARY KEY, customer_profile_id INT NOT NULL, order_date VARCHAR(40) NOT NULL,
+      id INT AUTO_INCREMENT PRIMARY KEY, customer_order_number INT UNSIGNED NOT NULL,
+      customer_profile_id INT NOT NULL, order_date VARCHAR(40) NOT NULL,
       status VARCHAR(32) NOT NULL, shipping_zone VARCHAR(128) NOT NULL, currency CHAR(3) NOT NULL,
       subtotal_aed_cents INT NOT NULL, shipping_fee_aed_cents INT NOT NULL, total_aed_cents INT NOT NULL,
       payment_method VARCHAR(64) NOT NULL, payment_status VARCHAR(32) NOT NULL DEFAULT 'not_required',
       stripe_checkout_session_id VARCHAR(255) NULL, delivery_address TEXT NULL, INDEX orders_customer_profile_id_idx (customer_profile_id),
-      INDEX orders_order_date_idx (order_date)
+      INDEX orders_order_date_idx (order_date),
+      UNIQUE KEY orders_customer_order_number_unique (customer_order_number)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+    `CREATE TABLE IF NOT EXISTS order_number_sequence (
+      id TINYINT UNSIGNED PRIMARY KEY, last_assigned_number INT UNSIGNED NOT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     `CREATE TABLE IF NOT EXISTS order_items (
       id INT AUTO_INCREMENT PRIMARY KEY, order_id INT NOT NULL, variant_or_product_id INT NOT NULL,
@@ -125,6 +131,66 @@ export async function initializeMySqlSchema(database: Sequelize): Promise<void> 
       "ALTER TABLE orders ADD COLUMN stripe_checkout_session_id VARCHAR(255) NULL AFTER payment_status",
     );
   }
+  const [orderCustomerNumberColumn] = await database.query(
+    "SHOW COLUMNS FROM orders LIKE 'customer_order_number'",
+  );
+  if (Array.isArray(orderCustomerNumberColumn) && orderCustomerNumberColumn.length === 0) {
+    try {
+      await database.query(
+        "ALTER TABLE orders ADD COLUMN customer_order_number INT UNSIGNED NULL AFTER id",
+      );
+    } catch (error) {
+      if (
+        !(error instanceof Error) ||
+        !error.message.includes("Duplicate column name 'customer_order_number'")
+      ) {
+        throw error;
+      }
+    }
+  }
+  await database.query(
+    `UPDATE orders
+     SET customer_order_number = id + :startingNumber
+     WHERE customer_order_number IS NULL`,
+    { replacements: { startingNumber: CUSTOMER_ORDER_NUMBER_START } },
+  );
+  await database.query(
+    "ALTER TABLE orders MODIFY COLUMN customer_order_number INT UNSIGNED NOT NULL",
+  );
+  const [customerOrderNumberIndex] = await database.query(
+    "SHOW INDEX FROM orders WHERE Key_name = 'orders_customer_order_number_unique'",
+  );
+  if (Array.isArray(customerOrderNumberIndex) && customerOrderNumberIndex.length === 0) {
+    try {
+      await database.query(
+        "ALTER TABLE orders ADD UNIQUE KEY orders_customer_order_number_unique (customer_order_number)",
+      );
+    } catch (error) {
+      if (
+        !(error instanceof Error) ||
+        !error.message.includes("Duplicate key name 'orders_customer_order_number_unique'")
+      ) {
+        throw error;
+      }
+    }
+  }
+  const [highestCustomerOrderNumber] = await database.query<{ customerOrderNumber: number }>(
+    "SELECT COALESCE(MAX(customer_order_number), :startingNumber) AS customerOrderNumber FROM orders",
+    {
+      replacements: { startingNumber: CUSTOMER_ORDER_NUMBER_START },
+      type: QueryTypes.SELECT,
+    },
+  );
+  const currentHighestNumber = Number(highestCustomerOrderNumber?.customerOrderNumber);
+  const sequenceLastValue = Number.isSafeInteger(currentHighestNumber)
+    ? Math.max(currentHighestNumber, CUSTOMER_ORDER_NUMBER_START)
+    : CUSTOMER_ORDER_NUMBER_START;
+  await database.query(
+    `INSERT INTO order_number_sequence (id, last_assigned_number)
+     VALUES (1, :sequenceLastValue)
+     ON DUPLICATE KEY UPDATE last_assigned_number = GREATEST(last_assigned_number, :sequenceLastValue)`,
+    { replacements: { sequenceLastValue } },
+  );
   const [orderItemImageColumn] = await database.query(
     "SHOW COLUMNS FROM order_items LIKE 'product_image_url'",
   );

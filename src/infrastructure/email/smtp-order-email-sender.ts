@@ -1,6 +1,7 @@
 import "server-only";
 import nodemailer from "nodemailer";
 import type { AdminOrderDetail } from "@/domain/demo-store/demo-store-repository";
+import { formatCustomerOrderNumber } from "@/domain/orders/customer-order-number";
 import { getServerEnvironment } from "@/config/env";
 import { formatWebsiteSenderAddress } from "@/infrastructure/email/smtp-sender-address";
 import { formatAedFromCents } from "@/shared/utils/currency";
@@ -13,6 +14,7 @@ export async function sendOrderConfirmationEmail(
 ): Promise<OrderEmailDelivery> {
   const environment = getServerEnvironment();
   const smtpConfiguration = getSmtpConfiguration(environment);
+  const customerOrderReference = formatCustomerOrderNumber(order.customerOrderNumber);
 
   if (!smtpConfiguration) return "not-configured";
 
@@ -26,7 +28,7 @@ export async function sendOrderConfirmationEmail(
   await transporter.sendMail({
     from: smtpConfiguration.from,
     html: buildOrderEmailHtml(order),
-    subject: `We received your Marsa Edge Marine order request #${order.id}`,
+    subject: `We received your Marsa Edge Marine ${customerOrderReference}`,
     text: buildOrderEmailText(order),
     to: order.customerEmail,
   });
@@ -40,6 +42,7 @@ export async function sendOrderStatusEmail(
 ): Promise<OrderEmailDelivery> {
   const environment = getServerEnvironment();
   const smtpConfiguration = getSmtpConfiguration(environment);
+  const customerOrderReference = formatCustomerOrderNumber(order.customerOrderNumber);
 
   if (!smtpConfiguration) return "not-configured";
 
@@ -60,13 +63,13 @@ export async function sendOrderStatusEmail(
 
   await transporter.sendMail({
     from: smtpConfiguration.from,
-    html: `<!doctype html><html><body style="margin:0;background:#f4f8fa;font-family:Arial,sans-serif;color:#0a2540"><main style="max-width:620px;margin:24px auto;background:#ffffff;border-radius:20px;overflow:hidden"><header style="padding:28px 32px;background:#071827;color:#ffffff"><p style="margin:0;color:#67e8f9;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Marsa Edge Marine LLC</p><h1 style="margin:12px 0 0;font-size:28px">${heading}</h1></header><section style="padding:30px 32px"><p>Hello ${escapeHtml(order.customerName)},</p><p>${escapeHtml(message)}</p><p>Order <strong>#${order.id}</strong> · <strong>${escapeHtml(formatAedFromCents(order.totalAedCents))}</strong></p><p>${escapeHtml(actionLine)}</p></section><footer style="padding:20px 32px;background:#f8fafc;color:#475569;font-size:14px">Marsa Edge Marine LLC<br />Dubai · Al Jaddaf · Drydocks</footer></main></body></html>`,
-    subject: `${isAccepted ? "Order accepted" : "Order update"} — Marsa Edge Marine order #${order.id}`,
+    html: `<!doctype html><html><body style="margin:0;background:#f4f8fa;font-family:Arial,sans-serif;color:#0a2540"><main style="max-width:620px;margin:24px auto;background:#ffffff;border-radius:20px;overflow:hidden"><header style="padding:28px 32px;background:#071827;color:#ffffff"><p style="margin:0;color:#67e8f9;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Marsa Edge Marine LLC</p><h1 style="margin:12px 0 0;font-size:28px">${heading}</h1></header><section style="padding:30px 32px"><p>Hello ${escapeHtml(order.customerName)},</p><p>${escapeHtml(message)}</p><p><strong>${customerOrderReference}</strong> · <strong>${escapeHtml(formatAedFromCents(order.totalAedCents))}</strong></p><p>${escapeHtml(actionLine)}</p></section><footer style="padding:20px 32px;background:#f8fafc;color:#475569;font-size:14px">Marsa Edge Marine LLC<br />Dubai · Al Jaddaf · Drydocks</footer></main></body></html>`,
+    subject: `${isAccepted ? "Order accepted" : "Order update"} — Marsa Edge Marine ${customerOrderReference}`,
     text: [
       `Hello ${order.customerName},`,
       "",
       message,
-      `Order #${order.id}: ${formatAedFromCents(order.totalAedCents)}`,
+      `${customerOrderReference}: ${formatAedFromCents(order.totalAedCents)}`,
       actionLine,
       "",
       "Marsa Edge Marine LLC",
@@ -101,6 +104,7 @@ function getSmtpConfiguration(environment: ReturnType<typeof getServerEnvironmen
 }
 
 function buildOrderEmailText(order: AdminOrderDetail): string {
+  const customerOrderReference = formatCustomerOrderNumber(order.customerOrderNumber);
   const itemLines = order.items
     .map(
       (item) => `- ${item.name} × ${item.quantity}: ${formatAedFromCents(item.lineTotalAedCents)}`,
@@ -109,7 +113,7 @@ function buildOrderEmailText(order: AdminOrderDetail): string {
   return [
     `Hello ${order.customerName},`,
     "",
-    `We received your order request #${order.id} for ${formatAedFromCents(order.totalAedCents)}.`,
+    `We received your ${customerOrderReference} request for ${formatAedFromCents(order.totalAedCents)}.`,
     "Your order request is received. Further updates will be sent soon after our marine team checks availability and delivery details.",
     "",
     "Order summary:",
@@ -124,13 +128,14 @@ function buildOrderEmailText(order: AdminOrderDetail): string {
 }
 
 function buildOrderEmailHtml(order: AdminOrderDetail): string {
+  const customerOrderReference = formatCustomerOrderNumber(order.customerOrderNumber);
   const items = order.items
     .map(
       (item) =>
         `<tr><td style="padding:10px 0;border-bottom:1px solid #e2e8f0">${escapeHtml(item.name)} <span style="color:#64748b">× ${item.quantity}</span></td><td style="padding:10px 0;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:700">${escapeHtml(formatAedFromCents(item.lineTotalAedCents))}</td></tr>`,
     )
     .join("");
-  return `<!doctype html><html><body style="margin:0;background:#f4f8fa;font-family:Arial,sans-serif;color:#0a2540"><main style="max-width:620px;margin:24px auto;background:#ffffff;border-radius:20px;overflow:hidden"><header style="padding:28px 32px;background:#071827;color:#ffffff"><p style="margin:0;color:#67e8f9;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Marsa Edge Marine LLC</p><h1 style="margin:12px 0 0;font-size:28px">Order request received</h1></header><section style="padding:30px 32px"><p>Hello ${escapeHtml(order.customerName)},</p><p>Thank you for your order request. We have recorded order <strong>#${order.id}</strong> for <strong>${escapeHtml(formatAedFromCents(order.totalAedCents))}</strong>.</p><p>Your order request is received. Our marine team will check availability and delivery details, and further updates will be sent soon by email or WhatsApp.</p><h2 style="font-size:17px;margin:28px 0 8px">Order summary</h2><table style="width:100%;border-collapse:collapse">${items}</table><p style="margin:24px 0 4px"><strong>Delivery address</strong></p><p style="margin:0;color:#475569">${escapeHtml(order.deliveryAddress ?? "To be confirmed")}</p><p style="margin:20px 0 0;color:#64748b;font-size:14px">Order date: ${escapeHtml(formatOrderDate(order.orderDate))}</p></section><footer style="padding:20px 32px;background:#f8fafc;color:#475569;font-size:14px">Marsa Edge Marine LLC<br />Dubai · Al Jaddaf · Drydocks</footer></main></body></html>`;
+  return `<!doctype html><html><body style="margin:0;background:#f4f8fa;font-family:Arial,sans-serif;color:#0a2540"><main style="max-width:620px;margin:24px auto;background:#ffffff;border-radius:20px;overflow:hidden"><header style="padding:28px 32px;background:#071827;color:#ffffff"><p style="margin:0;color:#67e8f9;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Marsa Edge Marine LLC</p><h1 style="margin:12px 0 0;font-size:28px">Order request received</h1></header><section style="padding:30px 32px"><p>Hello ${escapeHtml(order.customerName)},</p><p>Thank you for your order request. We have recorded <strong>${customerOrderReference}</strong> for <strong>${escapeHtml(formatAedFromCents(order.totalAedCents))}</strong>.</p><p>Your order request is received. Our marine team will check availability and delivery details, and further updates will be sent soon by email or WhatsApp.</p><h2 style="font-size:17px;margin:28px 0 8px">Order summary</h2><table style="width:100%;border-collapse:collapse">${items}</table><p style="margin:24px 0 4px"><strong>Delivery address</strong></p><p style="margin:0;color:#475569">${escapeHtml(order.deliveryAddress ?? "To be confirmed")}</p><p style="margin:20px 0 0;color:#64748b;font-size:14px">Order date: ${escapeHtml(formatOrderDate(order.orderDate))}</p></section><footer style="padding:20px 32px;background:#f8fafc;color:#475569;font-size:14px">Marsa Edge Marine LLC<br />Dubai · Al Jaddaf · Drydocks</footer></main></body></html>`;
 }
 
 function escapeHtml(value: string): string {

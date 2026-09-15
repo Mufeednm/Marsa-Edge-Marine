@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { restoreSessionUser } from "@/application/auth/auth-service";
 import { getServerEnvironment } from "@/config/env";
+import { formatCustomerOrderNumber } from "@/domain/orders/customer-order-number";
 import { readSessionUser } from "@/infrastructure/auth/session-cookie";
 import { createDemoStoreRepository } from "@/infrastructure/demo-store/file-demo-store-repository";
 import { getStripeClient } from "@/infrastructure/payments/stripe-client";
@@ -78,6 +79,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
 
     const origin = getCheckoutOrigin(request);
+    const customerOrderReference = formatCustomerOrderNumber(order.customerOrderNumber);
     const checkout = await getStripeClient().checkout.sessions.create({
       cancel_url: `${origin}/checkout?stripe=cancelled`,
       client_reference_id: user.id,
@@ -104,8 +106,18 @@ export async function POST(request: Request): Promise<NextResponse> {
             ]
           : []),
       ],
-      metadata: { orderId: String(order.id) },
+      metadata: {
+        customerOrderNumber: String(order.customerOrderNumber),
+        orderId: String(order.id),
+      },
       mode: "payment",
+      payment_intent_data: {
+        description: `Marsa Edge Marine ${customerOrderReference}`,
+        metadata: {
+          customerOrderNumber: String(order.customerOrderNumber),
+          orderId: String(order.id),
+        },
+      },
       payment_method_types: ["card"],
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     });

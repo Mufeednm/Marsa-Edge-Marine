@@ -29,6 +29,7 @@ export interface AdminActivityMetrics {
 }
 
 export interface AdminRecentOrder {
+  customerOrderNumber: number;
   id: number;
   customerName: string;
   orderDate: string;

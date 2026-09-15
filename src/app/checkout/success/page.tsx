@@ -38,7 +38,7 @@ export default async function StripeCheckoutSuccessPage({
   return (
     <StripeCheckoutSuccess
       customerName={user.name}
-      orderId={order.id}
+      customerOrderNumber={order.customerOrderNumber}
       totalAedCents={order.totalAedCents}
     />
   );

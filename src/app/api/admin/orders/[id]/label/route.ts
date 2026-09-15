@@ -2,25 +2,38 @@ import { NextResponse } from "next/server";
 import { restoreSessionUser } from "@/application/auth/auth-service";
 import { readSessionUser } from "@/infrastructure/auth/session-cookie";
 import { createDemoStoreRepository } from "@/infrastructure/demo-store/file-demo-store-repository";
+import { formatCustomerOrderNumber } from "@/domain/orders/customer-order-number";
 
 export const runtime = "nodejs";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<Response> {
   const { id } = await params;
   const orderId = Number(id);
-  if (!Number.isSafeInteger(orderId) || orderId < 1) return NextResponse.json({ message: "Order not found." }, { status: 404 });
+  if (!Number.isSafeInteger(orderId) || orderId < 1)
+    return NextResponse.json({ message: "Order not found." }, { status: 404 });
 
   const repository = createDemoStoreRepository();
   const user = await restoreSessionUser(repository, await readSessionUser());
-  if (!user || (user.role !== "admin" && user.role !== "staff")) return NextResponse.json({ message: "Admin access is required." }, { status: 401 });
+  if (!user || (user.role !== "admin" && user.role !== "staff"))
+    return NextResponse.json({ message: "Admin access is required." }, { status: 401 });
   const order = await repository.getOrderDetail(orderId);
   if (!order) return NextResponse.json({ message: "Order not found." }, { status: 404 });
 
-  const orderDate = new Intl.DateTimeFormat("en-AE", { dateStyle: "medium" }).format(new Date(order.orderDate));
+  const customerOrderReference = formatCustomerOrderNumber(order.customerOrderNumber);
+  const orderDate = new Intl.DateTimeFormat("en-AE", { dateStyle: "medium" }).format(
+    new Date(order.orderDate),
+  );
   const address = escapeHtml(order.deliveryAddress || order.shippingZone).replace(/\r?\n/g, "<br>");
-  const items = order.items.map((item) => `<li><span>${escapeHtml(item.name)}</span><strong>× ${item.quantity}</strong></li>`).join("");
+  const items = order.items
+    .map(
+      (item) => `<li><span>${escapeHtml(item.name)}</span><strong>× ${item.quantity}</strong></li>`,
+    )
+    .join("");
   const html = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Parcel label — Order #${order.id}</title><style>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Parcel label — ${customerOrderReference}</title><style>
 @page { size: 100mm 150mm; margin: 0; }
 * { box-sizing: border-box; }
 body { margin: 0; background: #e2e8f0; color: #0f172a; font-family: Arial, Helvetica, sans-serif; }
@@ -42,11 +55,18 @@ li strong { white-space: nowrap; }
 .actions { display: flex; justify-content: center; padding: 20px; }
 button { background: #0f172a; border: 0; border-radius: 8px; color: #fff; cursor: pointer; font: inherit; font-weight: 700; min-height: 44px; padding: 0 18px; }
 @media print { body { background: #fff; } .label { border-width: 1px; margin: 0; } .actions { display: none; } }
-</style></head><body><main class="label"><header class="header"><div><div class="brand">MARSA EDGE<br>MARINE LLC</div><small>Parcel label</small></div><div class="order">ORDER #${order.id}<small>${escapeHtml(orderDate)}</small></div></header><section class="to"><p class="caption">Ship to</p><div class="name">${escapeHtml(order.customerName)}</div><div class="address">${address}</div>${order.customerPhone ? `<div class="phone">${escapeHtml(order.customerPhone)}</div>` : ""}</section><section class="items"><p class="caption">Contents</p><ul>${items}</ul></section><footer class="footer"><span>Order date: ${escapeHtml(orderDate)}</span><span>UAE delivery · Keep this label attached to the parcel</span></footer></main><div class="actions"><button type="button" onclick="window.print()">Print parcel label</button></div><script>window.addEventListener("load", () => window.setTimeout(() => window.print(), 150));</script></body></html>`;
+</style></head><body><main class="label"><header class="header"><div><div class="brand">MARSA EDGE<br>MARINE LLC</div><small>Parcel label</small></div><div class="order">${customerOrderReference.toUpperCase()}<small>${escapeHtml(orderDate)}</small></div></header><section class="to"><p class="caption">Ship to</p><div class="name">${escapeHtml(order.customerName)}</div><div class="address">${address}</div>${order.customerPhone ? `<div class="phone">${escapeHtml(order.customerPhone)}</div>` : ""}</section><section class="items"><p class="caption">Contents</p><ul>${items}</ul></section><footer class="footer"><span>Order date: ${escapeHtml(orderDate)}</span><span>UAE delivery · Keep this label attached to the parcel</span></footer></main><div class="actions"><button type="button" onclick="window.print()">Print parcel label</button></div><script>window.addEventListener("load", () => window.setTimeout(() => window.print(), 150));</script></body></html>`;
 
-  return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "X-Content-Type-Options": "nosniff" } });
+  return new Response(html, {
+    headers: { "Content-Type": "text/html; charset=utf-8", "X-Content-Type-Options": "nosniff" },
+  });
 }
 
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ??
+      character,
+  );
 }

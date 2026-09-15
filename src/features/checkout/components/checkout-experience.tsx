@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { z } from "zod";
+import { formatCustomerOrderNumber } from "@/domain/orders/customer-order-number";
 import { formatAedFromCents } from "@/shared/utils/currency";
 import { digitsOnly, isValidNationalPhone } from "@/shared/utils/phone";
 
@@ -110,7 +111,7 @@ export function CheckoutExperience({
       ? "Card payment was not completed. Your basket is still here—review the details and try again when ready."
       : null,
   );
-  const [orderId, setOrderId] = useState<number | null>(null);
+  const [customerOrderNumber, setCustomerOrderNumber] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>("cod");
   const [detailsSaved, setDetailsSaved] = useState(false);
   useEffect(() => {
@@ -151,7 +152,12 @@ export function CheckoutExperience({
   const total = subtotal + shipping;
   if (complete)
     return (
-      <Success customer={customer} emailDelivery={emailDelivery} orderId={orderId} total={total} />
+      <Success
+        customer={customer}
+        customerOrderNumber={customerOrderNumber}
+        emailDelivery={emailDelivery}
+        total={total}
+      />
     );
 
   function validationMessage(currentStep: number): string | null {
@@ -207,21 +213,21 @@ export function CheckoutExperience({
       const checkoutEndpoint =
         paymentMethod === "stripe" ? "/api/payments/stripe/checkout" : "/api/orders";
       const response = await fetch(checkoutEndpoint, {
-          body: JSON.stringify({
-            deliveryAddress,
-            emirate,
-            lines: lines.map((line) => ({ productId: line.id, quantity: line.quantity })),
-            ...(paymentMethod === "cod" ? { paymentMethod } : {}),
-            phone: formatCheckoutPhone(countryCode, phone),
-          }),
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        });
+        body: JSON.stringify({
+          deliveryAddress,
+          emirate,
+          lines: lines.map((line) => ({ productId: line.id, quantity: line.quantity })),
+          ...(paymentMethod === "cod" ? { paymentMethod } : {}),
+          phone: formatCheckoutPhone(countryCode, phone),
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
       const body = (await response.json().catch(() => ({}))) as {
         checkoutUrl?: string;
+        customerOrderNumber?: number;
         emailDelivery?: "failed" | "not-configured" | "sent";
         message?: string;
-        orderId?: number;
       };
       if (!response.ok) {
         setError(body.message ?? "Your order could not be saved. Please try again.");
@@ -236,7 +242,7 @@ export function CheckoutExperience({
         return;
       }
       setEmailDelivery(body.emailDelivery ?? "not-configured");
-      setOrderId(body.orderId ?? null);
+      setCustomerOrderNumber(body.customerOrderNumber ?? null);
       window.sessionStorage.removeItem("thashreef-cart");
       setComplete(true);
     } catch {
@@ -797,13 +803,13 @@ function Field({
 }
 function Success({
   customer,
+  customerOrderNumber,
   emailDelivery,
-  orderId,
   total,
 }: {
   customer: { email: string; name: string };
+  customerOrderNumber: number | null;
   emailDelivery: "failed" | "not-configured" | "sent" | null;
-  orderId: number | null;
   total: number;
 }): ReactElement {
   const emailMessage =
@@ -854,6 +860,11 @@ function Success({
           been recorded. Our marine team will check availability and contact you with payment and
           dispatch details.
         </p>
+        {customerOrderNumber ? (
+          <p className="mt-4 text-sm font-black text-[#0a2540]">
+            {formatCustomerOrderNumber(customerOrderNumber)}
+          </p>
+        ) : null}
         <div className="mt-7 rounded-2xl border border-sky-100 bg-sky-50 px-5 py-4 text-left">
           <p className="text-sm font-extrabold text-[#0a2540]">Confirmation by email</p>
           <p className="mt-1 text-sm leading-6 text-slate-600">{emailMessage}</p>
@@ -862,7 +873,8 @@ function Success({
           className="mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-[#071827] px-6 text-sm font-black text-white transition hover:bg-[#0e7490] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0e7490]"
           href="/account"
         >
-          View my orders{orderId ? ` · #${orderId}` : ""}
+          View my orders
+          {customerOrderNumber ? ` · ${formatCustomerOrderNumber(customerOrderNumber)}` : ""}
         </Link>
       </section>
     </main>
