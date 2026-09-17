@@ -629,7 +629,7 @@ function AddressField({
 function addressPlaceholder(name: keyof DeliveryAddress): string {
   const placeholders: Record<keyof DeliveryAddress, string> = {
     apartment: "Apartment or unit number",
-    area: "e.g. Al Jaddaf",
+    area: "e.g. Meshairef",
     building: "Building or villa name/number",
     city: "e.g. Dubai",
     country: "e.g. United Arab Emirates",

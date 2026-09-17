@@ -61,7 +61,7 @@ export default function ContactPage(): ReactElement {
                   </a>
                 </ContactDetail>
                 <ContactDetail label="Address">
-                  Al Jaddaf Drydocks, Dubai, United Arab Emirates
+                  Meshairef, Ajman, United Arab Emirates
                 </ContactDetail>
                 <ContactDetail label="Instagram">
                   <a

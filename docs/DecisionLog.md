@@ -1,5 +1,9 @@
 # Decision Log
 
+## 2026-09-17 — Use Meshairef, Ajman as the public location
+
+The customer-facing business location is Meshairef, Ajman, United Arab Emirates. The footer, Contact page, checkout address example, and active order-email templates use this wording consistently. Historical changelog and decision records retain their original context.
+
 ## 2026-09-15 — Use a stored customer-facing order number
 
 Each order now receives an immutable sequential customer reference, starting in the `10000` range. The internal `orders.id` remains unchanged and continues to be used for database relations, authorization, and Stripe metadata.

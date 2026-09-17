@@ -1591,9 +1591,9 @@ export function Footer(): ReactElement {
             sales@marsaedgemarine.ae
           </a>
           <p className="mt-3 text-sm leading-6">
-            Al Jaddaf Drydocks
+            Meshairef, Ajman
             <br />
-            Dubai, United Arab Emirates
+            United Arab Emirates
           </p>
         </div>
       </div>
