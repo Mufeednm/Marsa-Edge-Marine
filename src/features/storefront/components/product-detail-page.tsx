@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactElement } from "react";
 import type { Product } from "@/domain/catalog/product";
 import { useLocale } from "@/features/i18n/locale-provider";
 import { Footer } from "@/features/storefront/components/storefront-experience";
+import { ProductImageGallery } from "@/features/storefront/components/product-image-gallery";
 import { ProductImage } from "@/features/storefront/components/product-image";
 import { formatAedFromCents } from "@/shared/utils/currency";
 
@@ -24,7 +25,6 @@ export function ProductDetailPage({
     product.secondaryImageUrl,
     product.tertiaryImageUrl,
   ].filter((image): image is string => Boolean(image));
-  const [selectedImage, setSelectedImage] = useState(product.imageUrl);
   const hasSale = product.salePriceAedCents !== null && product.salePriceAedCents !== undefined;
   const name = localizedProductName(product, locale);
   const description = localizedProductDescription(product, locale);
@@ -52,13 +52,14 @@ export function ProductDetailPage({
       cart = [];
     }
     const existing = cart.find((line) => line.id === product.id);
-    const nextCart = existing
-      ? cart.map((line) =>
-          line.id === product.id ? { ...line, quantity: line.quantity + 1 } : line,
-        )
-      : [...cart, { ...product, quantity: 1 }];
+    if (existing) {
+      setCartQuantity(existing.quantity);
+      return;
+    }
+
+    const nextCart = [...cart, { ...product, quantity: 1 }];
     window.sessionStorage.setItem("thashreef-cart", JSON.stringify(nextCart));
-    setCartQuantity(existing ? existing.quantity + 1 : 1);
+    setCartQuantity(1);
   }
 
   return (
@@ -96,37 +97,7 @@ export function ProductDetailPage({
             <span className="absolute left-6 top-6 rounded-full bg-[#0a2540] px-3 py-1.5 text-xs font-black text-white">
               {product.category}
             </span>
-            <ProductImage
-              alt={name}
-              className="mx-auto h-full min-h-[310px] w-full object-contain"
-              height={900}
-              imageUrl={selectedImage}
-              key={selectedImage}
-              priority
-              width={900}
-            />
-            {galleryImages.length > 1 ? (
-              <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 gap-2 rounded-2xl bg-white/90 p-2 shadow-sm">
-                {galleryImages.map((image, index) => (
-                  <button
-                    aria-label={`Show product image ${index + 1}`}
-                    aria-pressed={selectedImage === image}
-                    className={`size-12 overflow-hidden rounded-xl border-2 ${selectedImage === image ? "border-[#0e568f]" : "border-transparent"}`}
-                    key={image}
-                    onClick={() => setSelectedImage(image)}
-                    type="button"
-                  >
-                    <ProductImage
-                      alt=""
-                      className="h-full w-full object-cover"
-                      height={48}
-                      imageUrl={image}
-                      width={48}
-                    />
-                  </button>
-                ))}
-              </div>
-            ) : null}
+            <ProductImageGallery alt={name} images={galleryImages} />
           </div>
           <div className="p-6 sm:p-10">
             <p className="text-xs font-black tracking-[0.18em] text-[#0e7490] uppercase">
@@ -147,23 +118,19 @@ export function ProductDetailPage({
             </div>
             <p className="mt-6 text-base leading-7 text-slate-600">{description}</p>
             <button
-              className="mt-5 min-h-12 w-full rounded-full bg-[#f97316] px-6 text-sm font-black text-white transition hover:bg-[#c2410c]"
+              className="mt-5 min-h-12 w-full rounded-full bg-[#f97316] px-6 text-sm font-black text-white transition hover:bg-[#c2410c] disabled:cursor-not-allowed disabled:bg-emerald-700 disabled:opacity-90 disabled:hover:bg-emerald-700"
+              disabled={cartQuantity > 0}
               onClick={addToCart}
               type="button"
             >
-              {cartQuantity > 0
-                ? `In cart (${cartQuantity}) · Add another`
-                : "Add to cart"}
+              {cartQuantity > 0 ? "Added to cart" : "Add to cart"}
             </button>
             {cartQuantity > 0 ? (
               <div
                 aria-live="polite"
-                className="mt-3 flex items-center justify-between rounded-xl bg-sky-50 px-4 py-3 text-sm font-bold text-[#0e568f]"
+                className="mt-3 rounded-xl bg-sky-50 px-4 py-3 text-sm font-bold text-[#0e568f]"
               >
-                <span>{cartQuantity} item{cartQuantity === 1 ? "" : "s"} in your cart.</span>
-                <Link className="underline underline-offset-4" href="/checkout">
-                  Go to checkout
-                </Link>
+                This item is already in your cart. Update its quantity from the cart.
               </div>
             ) : null}
             <div className="mt-7 grid grid-cols-3 gap-2 border-t border-slate-100 pt-6 text-center text-xs font-bold text-slate-600">
@@ -175,22 +142,22 @@ export function ProductDetailPage({
         </article>
         {relatedProducts.length > 0 ? (
           <section className="mt-12" aria-labelledby="related-products-heading">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-xs font-black tracking-[0.2em] text-[#0e7490] uppercase">
-                More in this category
-              </p>
-              <h2
-                className="mt-2 text-2xl font-black tracking-tight text-[#0a2540]"
-                id="related-products-heading"
-              >
-                Related {product.category} products
-              </h2>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-xs font-black tracking-[0.2em] text-[#0e7490] uppercase">
+                  More in this category
+                </p>
+                <h2
+                  className="mt-2 text-2xl font-black tracking-tight text-[#0a2540]"
+                  id="related-products-heading"
+                >
+                  Related {product.category} products
+                </h2>
+              </div>
+              <Link className="text-sm font-bold text-[#0e568f] hover:underline" href="/shop">
+                Browse all products
+              </Link>
             </div>
-            <Link className="text-sm font-bold text-[#0e568f] hover:underline" href="/shop">
-              Browse all products
-            </Link>
-          </div>
             <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {relatedProducts.map((related) => (
                 <RelatedProductCard key={related.id} product={related} />

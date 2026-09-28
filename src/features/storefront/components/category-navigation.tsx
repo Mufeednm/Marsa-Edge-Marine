@@ -47,6 +47,14 @@ export function CategoryNavigation({
       ? categories.find((category) => category.id === selectedCategoryId)
       : undefined);
   const submenuCategory = activeCategory?.children.length ? activeCategory : null;
+  const selectedRootCategoryId =
+    typeof selectedCategoryId === "number"
+      ? categories.find(
+          (category) =>
+            category.id === selectedCategoryId ||
+            category.children.some((child) => child.id === selectedCategoryId),
+        )?.id
+      : undefined;
 
   useEffect(() => {
     return () => {
@@ -192,7 +200,12 @@ export function CategoryNavigation({
       <div className="grid gap-1 sm:grid-cols-2">
         {submenuCategory.children.map((child) => (
           <button
-            className="min-h-11 rounded-xl px-4 text-start text-sm font-semibold text-slate-700 transition hover:bg-cyan-50 hover:text-[#0e7490] focus:bg-cyan-50 focus:outline-none"
+            aria-current={selectedCategoryId === child.id ? "page" : undefined}
+            className={`min-h-11 rounded-xl px-4 text-start text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#0e7490] focus:ring-inset ${
+              selectedCategoryId === child.id
+                ? "bg-[#0e7490] text-white shadow-sm"
+                : "text-slate-700 hover:bg-cyan-50 hover:text-[#0e7490] focus:bg-cyan-50"
+            }`}
             key={child.id}
             onClick={() => choose(child.id)}
             role="menuitem"
@@ -228,7 +241,7 @@ export function CategoryNavigation({
                   category.children.length ? `category-submenu-${category.id}` : undefined
                 }
                 aria-expanded={category.children.length ? isOpen : undefined}
-                className={`min-h-11 rounded-full px-4 text-xs font-black transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f97316] ${selectedCategoryId === category.id || isOpen ? "bg-[#0a2540] text-white shadow-md shadow-slate-900/10" : "text-slate-700 hover:bg-[#eef8fb] hover:text-[#0e7490]"}`}
+                className={`min-h-11 rounded-full px-4 text-xs font-black transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0e7490] ${selectedRootCategoryId === category.id || isOpen ? "bg-[#0e7490] text-white shadow-md shadow-cyan-900/15" : "text-slate-700 hover:bg-[#eef8fb] hover:text-[#0e7490]"}`}
                 onClick={() => toggleCategory(category)}
                 onKeyDown={(event) => onKeyDown(event, index, category)}
                 ref={(element) => {

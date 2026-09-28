@@ -25,6 +25,7 @@ interface StorefrontExperienceProps {
 
 type CartLine = Product & { quantity: number };
 type ProductSort = "featured" | "newest" | "price-high" | "price-low";
+type CatalogPaginationItem = number | "ellipsis";
 
 interface HeroSlide {
   accent: string;
@@ -47,6 +48,8 @@ const heroBannerImages = [
   "/hero-items/dubai-safety-hero-v2.png",
   "/hero-items/dubai-maintenance-hero-v2.png",
 ] as const;
+
+const productsPerCatalogPage = 15;
 
 const heroSlides: HeroSlide[] = [
   {
@@ -130,6 +133,7 @@ export function StorefrontExperience({
   const [query, setQuery] = useState("");
   const [productSort, setProductSort] = useState<ProductSort>("featured");
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | "all">("all");
+  const [catalogPage, setCatalogPage] = useState(1);
   const [activeSlide, setActiveSlide] = useState(0);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartHydrated, setCartHydrated] = useState(false);
@@ -167,6 +171,8 @@ export function StorefrontExperience({
     selectedCategoryId === "all"
       ? "All products"
       : (categoryLookup.get(selectedCategoryId)?.name ?? "Selected category");
+  const selectedCategory =
+    selectedCategoryId === "all" ? undefined : categoryLookup.get(selectedCategoryId);
   const selectedCategoryIds = useMemo(() => {
     if (selectedCategoryId === "all") {
       return null;
@@ -178,6 +184,29 @@ export function StorefrontExperience({
     getDescendantCategoryIds(categoryLookup.get(categoryId)).some((id) =>
       assignedCategoryIds.has(id),
     );
+  const catalogCategoryChoices =
+    selectedCategoryId === "all" || !selectedCategory
+      ? flatCategories
+          .filter((category) => category.depth > 0 && hasProductsInCategory(category.id))
+          .slice(0, 12)
+      : selectedCategory.depth === 0
+        ? [
+            selectedCategory,
+            ...selectedCategory.children.filter((category) => hasProductsInCategory(category.id)),
+          ]
+        : (() => {
+            const parentCategory = selectedCategory.parentCategoryId
+              ? categoryLookup.get(selectedCategory.parentCategoryId)
+              : undefined;
+            return parentCategory
+              ? [
+                  parentCategory,
+                  ...parentCategory.children.filter((category) =>
+                    hasProductsInCategory(category.id),
+                  ),
+                ]
+              : [selectedCategory];
+          })();
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -198,6 +227,18 @@ export function StorefrontExperience({
       return left.homepageOrder - right.homepageOrder;
     });
   }, [productSort, products, query, selectedCategoryIds]);
+  const catalogPageCount = Math.max(1, Math.ceil(filteredProducts.length / productsPerCatalogPage));
+  const activeCatalogPage = Math.min(catalogPage, catalogPageCount);
+  const catalogPageStart =
+    filteredProducts.length === 0 ? 0 : (activeCatalogPage - 1) * productsPerCatalogPage + 1;
+  const catalogPageEnd = Math.min(
+    activeCatalogPage * productsPerCatalogPage,
+    filteredProducts.length,
+  );
+  const catalogProducts = useMemo(() => {
+    const start = (activeCatalogPage - 1) * productsPerCatalogPage;
+    return filteredProducts.slice(start, start + productsPerCatalogPage);
+  }, [activeCatalogPage, filteredProducts]);
   const bestSellers = useMemo(
     () =>
       products.some((product) => product.isTopSelling)
@@ -292,17 +333,29 @@ export function StorefrontExperience({
   function selectCategoryAndScroll(categoryId: number | "all"): void {
     setQuery("");
     setSelectedCategoryId(categoryId);
+    setCatalogPage(1);
     document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function searchProducts(value: string): void {
     setQuery(value);
+    setCatalogPage(1);
     if (value.trim()) {
       setSelectedCategoryId("all");
       window.requestAnimationFrame(() =>
         document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth", block: "start" }),
       );
     }
+  }
+
+  function changeProductSort(value: ProductSort): void {
+    setProductSort(value);
+    setCatalogPage(1);
+  }
+
+  function changeCatalogPage(page: number): void {
+    setCatalogPage(page);
+    document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function updateQuantity(productId: string, change: number): void {
@@ -341,6 +394,7 @@ export function StorefrontExperience({
           <HeroShowcase
             addToCart={addToCart}
             activeSlide={activeSlide}
+            cartQuantityByProductId={cartQuantityByProductId}
             products={recentlyAdded.length > 0 ? recentlyAdded : products}
             selectDepartment={selectDepartment}
             setActiveSlide={setActiveSlide}
@@ -390,9 +444,10 @@ export function StorefrontExperience({
               </div>
               <div className="flex max-w-4xl flex-wrap items-center gap-2">
                 <button
-                  className={`min-h-11 rounded-full px-4 text-xs font-black transition ${
+                  aria-pressed={selectedCategoryId === "all"}
+                  className={`min-h-11 rounded-full px-4 text-xs font-black transition focus:outline-none focus:ring-2 focus:ring-[#0e7490] focus:ring-offset-2 ${
                     selectedCategoryId === "all"
-                      ? "bg-[#0a2540] text-white shadow-lg shadow-slate-900/10"
+                      ? "bg-[#0e7490] text-white shadow-lg shadow-cyan-900/15"
                       : "border border-slate-200 bg-white text-slate-700 hover:border-[#0e7490] hover:text-[#0e7490]"
                   }`}
                   onClick={() => selectCategoryAndScroll("all")}
@@ -400,30 +455,28 @@ export function StorefrontExperience({
                 >
                   All products
                 </button>
-                {flatCategories
-                  .filter((category) => category.depth > 0 && hasProductsInCategory(category.id))
-                  .slice(0, 12)
-                  .map((category) => (
-                    <button
-                      className={`min-h-11 rounded-full px-4 text-xs font-black transition ${
-                        selectedCategoryId === category.id
-                          ? "bg-[#0a2540] text-white shadow-lg shadow-slate-900/10"
-                          : "border border-slate-200 bg-white text-slate-700 hover:border-[#0e7490] hover:text-[#0e7490]"
-                      }`}
-                      key={category.id}
-                      onClick={() => selectCategoryAndScroll(category.id)}
-                      type="button"
-                    >
-                      {category.name}
-                    </button>
-                  ))}
+                {catalogCategoryChoices.map((category) => (
+                  <button
+                    aria-pressed={selectedCategoryId === category.id}
+                    className={`min-h-11 rounded-full px-4 text-xs font-black transition focus:outline-none focus:ring-2 focus:ring-[#0e7490] focus:ring-offset-2 ${
+                      selectedCategoryId === category.id
+                        ? "bg-[#0e7490] text-white shadow-lg shadow-cyan-900/15"
+                        : "border border-slate-200 bg-white text-slate-700 hover:border-[#0e7490] hover:text-[#0e7490]"
+                    }`}
+                    key={category.id}
+                    onClick={() => selectCategoryAndScroll(category.id)}
+                    type="button"
+                  >
+                    {category.name}
+                  </button>
+                ))}
                 <label className="ml-auto flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600">
                   <span className="sr-only">Sort products</span>
                   Sort
                   <select
                     aria-label="Sort products"
                     className="bg-transparent font-black text-[#0a2540] outline-none"
-                    onChange={(event) => setProductSort(event.target.value as ProductSort)}
+                    onChange={(event) => changeProductSort(event.target.value as ProductSort)}
                     value={productSort}
                   >
                     <option value="featured">Featured</option>
@@ -435,17 +488,29 @@ export function StorefrontExperience({
               </div>
             </div>
             {filteredProducts.length > 0 ? (
-              <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                {filteredProducts.slice(0, 15).map((product, index) => (
-                  <ProductCard
-                    addToCart={addToCart}
-                    cartQuantity={cartQuantityByProductId.get(product.id) ?? 0}
-                    index={index}
-                    isJustAdded={addedProductName === product.name}
-                    key={product.id}
-                    product={product}
+              <div className="mt-7">
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                  {catalogProducts.map((product, index) => (
+                    <ProductCard
+                      addToCart={addToCart}
+                      cartQuantity={cartQuantityByProductId.get(product.id) ?? 0}
+                      index={index}
+                      isJustAdded={addedProductName === product.name}
+                      key={product.id}
+                      product={product}
+                    />
+                  ))}
+                </div>
+                {catalogPageCount > 1 ? (
+                  <CatalogPagination
+                    currentPage={activeCatalogPage}
+                    onPageChange={changeCatalogPage}
+                    pageCount={catalogPageCount}
+                    rangeEnd={catalogPageEnd}
+                    rangeStart={catalogPageStart}
+                    totalProducts={filteredProducts.length}
                   />
-                ))}
+                ) : null}
               </div>
             ) : (
               <div className="mt-7 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
@@ -521,6 +586,110 @@ function getDescendantCategoryIds(category?: CategoryTreeNode): number[] {
     category.id,
     ...category.children.flatMap((childCategory) => getDescendantCategoryIds(childCategory)),
   ];
+}
+
+function CatalogPagination({
+  currentPage,
+  onPageChange,
+  pageCount,
+  rangeEnd,
+  rangeStart,
+  totalProducts,
+}: {
+  currentPage: number;
+  onPageChange: (page: number) => void;
+  pageCount: number;
+  rangeEnd: number;
+  rangeStart: number;
+  totalProducts: number;
+}): ReactElement {
+  const pageItems = getCatalogPaginationItems(currentPage, pageCount);
+
+  return (
+    <nav
+      aria-label="Catalog pagination"
+      className="mt-8 flex flex-col gap-4 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p aria-live="polite" className="text-sm font-semibold text-slate-600">
+        Showing{" "}
+        <span className="font-black text-[#0a2540]">
+          {rangeStart}–{rangeEnd}
+        </span>{" "}
+        of <span className="font-black text-[#0a2540]">{totalProducts}</span> products
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          aria-label="Go to previous product page"
+          className="min-h-11 rounded-full border border-slate-200 bg-white px-4 text-sm font-black text-[#0a2540] transition hover:border-[#0e7490] hover:text-[#0e7490] focus:outline-none focus:ring-2 focus:ring-[#0e7490] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-slate-200 disabled:hover:text-[#0a2540]"
+          disabled={currentPage === 1}
+          onClick={() => onPageChange(currentPage - 1)}
+          type="button"
+        >
+          Previous
+        </button>
+        {pageItems.map((pageItem, index) =>
+          pageItem === "ellipsis" ? (
+            <span
+              aria-hidden="true"
+              className="grid min-h-11 min-w-8 place-items-center text-sm font-black text-slate-400"
+              key={`ellipsis-${index}`}
+            >
+              …
+            </span>
+          ) : (
+            <button
+              aria-current={pageItem === currentPage ? "page" : undefined}
+              aria-label={`Go to product page ${pageItem}`}
+              className={`min-h-11 min-w-11 rounded-full px-3 text-sm font-black transition focus:outline-none focus:ring-2 focus:ring-[#0e7490] focus:ring-offset-2 ${
+                pageItem === currentPage
+                  ? "bg-[#0a2540] text-white shadow-lg shadow-slate-900/15"
+                  : "border border-slate-200 bg-white text-[#0a2540] hover:border-[#0e7490] hover:text-[#0e7490]"
+              }`}
+              key={pageItem}
+              onClick={() => onPageChange(pageItem)}
+              type="button"
+            >
+              {pageItem}
+            </button>
+          ),
+        )}
+        <button
+          aria-label="Go to next product page"
+          className="min-h-11 rounded-full border border-slate-200 bg-white px-4 text-sm font-black text-[#0a2540] transition hover:border-[#0e7490] hover:text-[#0e7490] focus:outline-none focus:ring-2 focus:ring-[#0e7490] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-slate-200 disabled:hover:text-[#0a2540]"
+          disabled={currentPage === pageCount}
+          onClick={() => onPageChange(currentPage + 1)}
+          type="button"
+        >
+          Next
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+function getCatalogPaginationItems(
+  currentPage: number,
+  pageCount: number,
+): CatalogPaginationItem[] {
+  const pages =
+    pageCount <= 7
+      ? Array.from({ length: pageCount }, (_, index) => index + 1)
+      : currentPage <= 4
+        ? [1, 2, 3, 4, 5, pageCount]
+        : currentPage >= pageCount - 3
+          ? [1, pageCount - 4, pageCount - 3, pageCount - 2, pageCount - 1, pageCount]
+          : [1, currentPage - 1, currentPage, currentPage + 1, pageCount];
+
+  const items: CatalogPaginationItem[] = [];
+  let previousPage = 0;
+  for (const page of pages) {
+    if (page - previousPage > 1) {
+      items.push("ellipsis");
+    }
+    items.push(page);
+    previousPage = page;
+  }
+  return items;
 }
 
 function Header({
@@ -648,6 +817,7 @@ function Header({
 function HeroShowcase({
   addToCart,
   activeSlide,
+  cartQuantityByProductId,
   products,
   selectDepartment,
   setActiveSlide,
@@ -656,6 +826,7 @@ function HeroShowcase({
 }: {
   addToCart: (product: Product) => void;
   activeSlide: number;
+  cartQuantityByProductId: Map<string, number>;
   products: Product[];
   selectDepartment: (matcher: string) => void;
   setActiveSlide: (index: number) => void;
@@ -741,42 +912,47 @@ function HeroShowcase({
               </span>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
-              {products.slice(0, 2).map((product) => (
-                <article
-                  className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.07]"
-                  key={product.id}
-                >
-                  <Link
-                    aria-label={`View ${product.name}`}
-                    className="block"
-                    href={`/products/${product.slug}`}
+              {products.slice(0, 2).map((product) => {
+                const isInCart = (cartQuantityByProductId.get(product.id) ?? 0) > 0;
+
+                return (
+                  <article
+                    className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.07]"
+                    key={product.id}
                   >
-                    <div className="relative aspect-[16/10] bg-white">
-                      <ProductImage
-                        alt={product.name}
-                        className="object-contain p-2"
-                        height={180}
-                        imageUrl={product.imageUrl}
-                        sizes="180px"
-                        width={180}
-                      />
-                    </div>
-                    <div className="px-3 pt-2">
-                      <p className="truncate text-xs font-bold text-white">{product.name}</p>
-                      <p className="mt-1 text-xs font-black text-cyan-100">
-                        {formatAedFromCents(product.priceAedCents)}
-                      </p>
-                    </div>
-                  </Link>
-                  <button
-                    className="m-3 mt-2 min-h-11 w-[calc(100%-1.5rem)] rounded-lg border border-white/15 bg-white/10 px-2 text-xs font-bold text-white transition hover:bg-[#f97316]"
-                    onClick={() => addToCart(product)}
-                    type="button"
-                  >
-                    Add to cart
-                  </button>
-                </article>
-              ))}
+                    <Link
+                      aria-label={`View ${product.name}`}
+                      className="block"
+                      href={`/products/${product.slug}`}
+                    >
+                      <div className="relative aspect-[16/10] bg-white">
+                        <ProductImage
+                          alt={product.name}
+                          className="object-contain p-2"
+                          height={180}
+                          imageUrl={product.imageUrl}
+                          sizes="180px"
+                          width={180}
+                        />
+                      </div>
+                      <div className="px-3 pt-2">
+                        <p className="truncate text-xs font-bold text-white">{product.name}</p>
+                        <p className="mt-1 text-xs font-black text-cyan-100">
+                          {formatAedFromCents(product.priceAedCents)}
+                        </p>
+                      </div>
+                    </Link>
+                    <button
+                      className="m-3 mt-2 min-h-11 w-[calc(100%-1.5rem)] rounded-lg border border-white/15 bg-white/10 px-2 text-xs font-bold text-white transition hover:bg-[#f97316] disabled:cursor-not-allowed disabled:bg-emerald-700 disabled:opacity-90 disabled:hover:bg-emerald-700"
+                      disabled={isInCart}
+                      onClick={() => addToCart(product)}
+                      type="button"
+                    >
+                      {isInCart ? "Added to cart" : "Add to cart"}
+                    </button>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -960,6 +1136,7 @@ function ProductCard({
     product.secondaryImageUrl,
     product.tertiaryImageUrl,
   ].filter(Boolean).length;
+  const isInCart = cartQuantity > 0;
   const tones = [
     "from-sky-100 to-blue-50",
     "from-orange-100 to-amber-50",
@@ -1017,16 +1194,15 @@ function ProductCard({
         <button
           aria-live="polite"
           className={`mt-4 min-h-11 w-full rounded-full px-3 text-sm font-black text-white transition ${
-            cartQuantity > 0 || isJustAdded ? "bg-emerald-700" : "bg-[#0a2540] hover:bg-[#0e7490]"
+            isInCart || isJustAdded
+              ? "bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-90"
+              : "bg-[#0a2540] hover:bg-[#0e7490]"
           }`}
+          disabled={isInCart}
           onClick={() => addToCart(product)}
           type="button"
         >
-          {cartQuantity > 0
-            ? `In cart (${cartQuantity}) · Add another`
-            : isJustAdded
-              ? "Added to cart"
-              : "Add to cart"}
+          {isInCart || isJustAdded ? "Added to cart" : "Add to cart"}
         </button>
       </div>
     </article>
@@ -1386,7 +1562,17 @@ function MobileMenu({
   selectedCategoryId: number | "all";
   selectCategory: (categoryId: number | "all") => void;
 }): ReactElement {
-  const [expandedCategoryId, setExpandedCategoryId] = useState<number | null>(null);
+  const selectedRootCategoryId =
+    typeof selectedCategoryId === "number"
+      ? categoryTree.find(
+          (category) =>
+            category.id === selectedCategoryId ||
+            category.children.some((child) => child.id === selectedCategoryId),
+        )?.id
+      : undefined;
+  const [expandedCategoryId, setExpandedCategoryId] = useState<number | null>(
+    selectedRootCategoryId ?? null,
+  );
   return (
     <motion.div
       aria-modal="true"
@@ -1418,7 +1604,7 @@ function MobileMenu({
           <button
             className={`min-h-12 rounded-2xl px-4 text-left text-sm font-black ${
               selectedCategoryId === "all"
-                ? "bg-[#0a2540] text-white"
+                ? "bg-[#0e7490] text-white"
                 : "bg-slate-50 text-slate-700"
             }`}
             onClick={() => {
@@ -1433,7 +1619,9 @@ function MobileMenu({
             <div className="rounded-2xl bg-slate-50 p-3" key={category.id}>
               <button
                 className={`min-h-11 w-full rounded-xl px-3 text-left text-sm font-black ${
-                  selectedCategoryId === category.id ? "bg-[#0a2540] text-white" : "text-[#0a2540]"
+                  selectedRootCategoryId === category.id
+                    ? "bg-[#0e7490] text-white"
+                    : "text-[#0a2540]"
                 }`}
                 aria-expanded={expandedCategoryId === category.id}
                 onClick={() =>
@@ -1459,7 +1647,7 @@ function MobileMenu({
                     <button
                       className={`min-h-10 rounded-xl px-3 text-left text-xs font-bold ${
                         selectedCategoryId === subcategory.id
-                          ? "bg-white text-[#0e7490] shadow-sm"
+                          ? "bg-[#0e7490] text-white shadow-sm"
                           : "text-slate-600"
                       }`}
                       key={subcategory.id}

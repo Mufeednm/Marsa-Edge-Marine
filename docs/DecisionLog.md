@@ -1,5 +1,23 @@
 # Decision Log
 
+## 2026-09-28 — Give multi-image product galleries visible and touch controls
+
+Product pages show 44 px previous/next buttons only when a product has more than one image. Customers may also swipe horizontally over the gallery, while vertical page scrolling remains unaffected. Thumbnails and an announced “Image X of Y” count provide visible and assistive-technology feedback; single-image products retain the uncluttered image presentation.
+
+## 2026-09-28 — Keep selected categories visible and blue
+
+After a customer selects a category, the catalogue control row narrows to the relevant main category and its subcategories instead of continuing to show unrelated subcategories. The active category uses the storefront blue across the catalogue, desktop navigation, and mobile menu so the selected filter remains immediately visible.
+
+## 2026-09-28 — Change quantities only in the cart
+
+Once a product is in the cart, storefront product buttons show a clear disabled “Added to cart” state rather than inviting the customer to add another unit. The cart drawer remains the single place to increase, decrease, or remove quantities, which makes the next action predictable and prevents accidental duplicate additions.
+
+## 2026-09-28 — Paginate the customer catalogue at 15 products per page
+
+The public catalogue intentionally shows 15 products at a time so category and search results remain quick to scan without hiding products after the first screen. Customers can move between pages using labelled Previous, Next, and page-number controls; the control announces the displayed range and preserves keyboard access.
+
+Changing the category, search text, or sort order returns the customer to page one. This prevents an empty-looking result area when a narrower result set has fewer pages than the previously selected view.
+
 ## 2026-09-17 — Use Meshairef, Ajman as the public location
 
 The customer-facing business location is Meshairef, Ajman, United Arab Emirates. The footer, Contact page, checkout address example, and active order-email templates use this wording consistently. Historical changelog and decision records retain their original context.
