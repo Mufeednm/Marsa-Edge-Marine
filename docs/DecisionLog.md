@@ -1,5 +1,39 @@
 # Decision Log
 
+## 2026-09-28 — Give multi-image product galleries visible and touch controls
+
+Product pages show 44 px previous/next buttons only when a product has more than one image. Customers may also swipe horizontally over the gallery, while vertical page scrolling remains unaffected. Thumbnails and an announced “Image X of Y” count provide visible and assistive-technology feedback; single-image products retain the uncluttered image presentation.
+
+## 2026-09-28 — Keep selected categories visible and blue
+
+After a customer selects a category, the catalogue control row narrows to the relevant main category and its subcategories instead of continuing to show unrelated subcategories. The active category uses the storefront blue across the catalogue, desktop navigation, and mobile menu so the selected filter remains immediately visible.
+
+## 2026-09-28 — Change quantities only in the cart
+
+Once a product is in the cart, storefront product buttons show a clear disabled “Added to cart” state rather than inviting the customer to add another unit. The cart drawer remains the single place to increase, decrease, or remove quantities, which makes the next action predictable and prevents accidental duplicate additions.
+
+## 2026-09-28 — Paginate the customer catalogue at 15 products per page
+
+The public catalogue intentionally shows 15 products at a time so category and search results remain quick to scan without hiding products after the first screen. Customers can move between pages using labelled Previous, Next, and page-number controls; the control announces the displayed range and preserves keyboard access.
+
+Changing the category, search text, or sort order returns the customer to page one. This prevents an empty-looking result area when a narrower result set has fewer pages than the previously selected view.
+
+## 2026-09-17 — Use Meshairef, Ajman as the public location
+
+The customer-facing business location is Meshairef, Ajman, United Arab Emirates. The footer, Contact page, checkout address example, and active order-email templates use this wording consistently. Historical changelog and decision records retain their original context.
+
+## 2026-09-15 — Send payment-aware customer emails and sales order notifications
+
+Cash on Delivery customers receive an explicit confirmation that payment will be collected on delivery. Stripe customers receive a confirmation only after the server verifies a paid Checkout Session, explicitly stating that their card payment was received.
+
+The configured `SMTP_FROM` sales mailbox is also the internal new-order recipient. This avoids hard-coding operational email addresses and gives the sales team a separate message with the customer, delivery, item, total, and payment information. Stripe notifications run only after an order transitions from pending to paid, so a cancelled or incomplete hosted checkout does not generate a false sales order notification.
+
+## 2026-09-15 — Use a stored customer-facing order number
+
+Each order now receives an immutable sequential customer reference, starting in the `10000` range. The internal `orders.id` remains unchanged and continues to be used for database relations, authorization, and Stripe metadata.
+
+Existing records are assigned `10000 + internal ID` during the non-destructive database migration. New orders reserve the next number from a locked sequence within the same transaction that creates the order, so a customer reference is unique, stable, and never inferred from the internal ID in customer-facing views.
+
 ## 2026-09-12 — Keep operational credentials out of the project handover document
 
 The concise website access sheet records the approved hosting, domain, email, Stripe, and environment setup without storing a password or secret. Account credentials stay in the password manager and deployment secret manager so the documentation can safely remain in the repository.
@@ -610,6 +644,7 @@ Render's Node 24 build image selected a prebuilt `sqlite3` binary requiring GLIB
 - **Reason:** Social login, MFA, recovery, roles, and user-data requirements need confirmation.
 - **Alternatives:** Custom JWT authentication or a hosted identity provider.
 - **Impact:** The identity milestone must add secure sessions, password hashing, CSRF protections, and authorization policies.
+
 ## 2026-09-03 - Re-enable N-Genius card checkout
 
 - **Decision:** Present Cash on Delivery and N-Genius hosted card payment as explicit checkout choices, using the existing server-side N-Genius checkout route for card orders.

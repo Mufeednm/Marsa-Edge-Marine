@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Keep category filtering focused after a selection: show the selected main category and its subcategories in the catalogue controls, and use the storefront blue active state in desktop and mobile category navigation.
+- Replace repeat “Add another” product actions with a clear disabled “Added to cart” state; quantity can now only be changed in the cart drawer.
+- Add customer-facing catalogue pagination: show 15 products per page, a clear product range, accessible page controls, and reset to the first page whenever the category, search, or sort changes.
+- Update the public business location in the footer, Contact page, checkout address guidance, and order emails to Meshairef, Ajman.
+- Send the sales mailbox an internal new-order notification for Cash on Delivery orders and completed Stripe card payments, while tailoring customer confirmation wording to the selected payment method.
+- Add immutable, sequential customer-facing order numbers in the `10000` range while retaining internal database IDs for application and payment processing.
+- Show the same customer order reference in checkout confirmation, customer and administrator orders, order emails, parcel labels, and PDF order details.
 - Add a concise, secure website access sheet covering Hostinger, domain, email, Stripe, and environment setup.
 - Display `Marsa Edge Marine` as the sender name for OTP, order, and website-enquiry emails while continuing to send through the configured sales mailbox.
 - Show clear `Paid`, `Pending`, `Failed`, and `Not required` payment badges in Admin Orders separately from fulfilment status.
@@ -125,6 +132,10 @@
 - Configure Render to compile SQLite for its Linux runtime during the test deployment build.
 
 ## [Unreleased]
+
+### Changed
+
+- Added swipe, previous/next arrow, thumbnail, and accessible image-count controls to multi-image product galleries.
 
 ### Added
 
