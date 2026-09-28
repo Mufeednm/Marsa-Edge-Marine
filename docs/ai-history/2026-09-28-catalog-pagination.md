@@ -32,3 +32,8 @@ Make every product in a category available locally instead of stopping after the
 
 - Added touch swipe gestures and visible previous/next controls for product pages with multiple uploaded images.
 - Kept thumbnails and an accessible image-position status so image navigation is clear without relying on swipe alone.
+
+## Follow-up: desktop category menu pointer travel
+
+- Removed the visual/pointer gap between a main category and its portal-rendered submenu.
+- Extended the submenu close grace period so a customer can move naturally into a subcategory without the menu disappearing.

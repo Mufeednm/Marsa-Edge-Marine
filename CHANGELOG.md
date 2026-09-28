@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Keep desktop category submenus open while the pointer moves from a main category into its subcategory menu.
+
 - Keep category filtering focused after a selection: show the selected main category and its subcategories in the catalogue controls, and use the storefront blue active state in desktop and mobile category navigation.
 - Replace repeat “Add another” product actions with a clear disabled “Added to cart” state; quantity can now only be changed in the cart drawer.
 - Add customer-facing catalogue pagination: show 15 products per page, a clear product range, accessible page controls, and reset to the first page whenever the category, search, or sort changes.
