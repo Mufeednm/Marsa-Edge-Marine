@@ -1,5 +1,9 @@
 # Decision Log
 
+## 2026-09-28 — Use Webpack for Hostinger production builds
+
+Hostinger's current Node build runner invokes Turbopack by default for `next build`, where it fails before the application compiles because its CSS worker exits unexpectedly. The application therefore explicitly uses Next.js Webpack mode for production builds. This is a build-tool selection only and does not change the runtime database, schema, or uploaded media.
+
 ## 2026-09-28 — Give multi-image product galleries visible and touch controls
 
 Product pages show 44 px previous/next buttons only when a product has more than one image. Customers may also swipe horizontally over the gallery, while vertical page scrolling remains unaffected. Thumbnails and an announced “Image X of Y” count provide visible and assistive-technology feedback; single-image products retain the uncluttered image presentation.
@@ -634,6 +638,7 @@ Render's Node 24 build image selected a prebuilt `sqlite3` binary requiring GLIB
 - **Reason:** Social login, MFA, recovery, roles, and user-data requirements need confirmation.
 - **Alternatives:** Custom JWT authentication or a hosted identity provider.
 - **Impact:** The identity milestone must add secure sessions, password hashing, CSRF protections, and authorization policies.
+
 ## 2026-09-03 - Re-enable N-Genius card checkout
 
 - **Decision:** Present Cash on Delivery and N-Genius hosted card payment as explicit checkout choices, using the existing server-side N-Genius checkout route for card orders.
