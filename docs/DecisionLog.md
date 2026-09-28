@@ -4,6 +4,10 @@
 
 Hostinger's current Node build runner invokes Turbopack by default for `next build`, where it fails before the application compiles because its CSS worker exits unexpectedly. The application therefore explicitly uses Next.js Webpack mode for production builds. This is a build-tool selection only and does not change the runtime database, schema, or uploaded media.
 
+## 2026-09-28 — Remove the desktop submenu hover gap
+
+Desktop category dropdowns begin directly below their main-category button, with their existing inner spacing retained inside the menu. A slightly longer close grace period protects a deliberate pointer movement into a subcategory, while menus still close promptly when the customer leaves both navigation areas.
+
 ## 2026-09-28 — Give multi-image product galleries visible and touch controls
 
 Product pages show 44 px previous/next buttons only when a product has more than one image. Customers may also swipe horizontally over the gallery, while vertical page scrolling remains unaffected. Thumbnails and an announced “Image X of Y” count provide visible and assistive-technology feedback; single-image products retain the uncluttered image presentation.

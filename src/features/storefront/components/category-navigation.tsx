@@ -98,7 +98,7 @@ export function CategoryNavigation({
       const width = Math.min(MENU_MAX_WIDTH, window.innerWidth - MENU_GUTTER * 2);
       setMenuPosition({
         left: Math.min(Math.max(MENU_GUTTER, anchor.left), window.innerWidth - width - MENU_GUTTER),
-        top: anchor.bottom + 8,
+        top: anchor.bottom,
         width: Math.max(anchor.width, width),
       });
     }
@@ -130,7 +130,7 @@ export function CategoryNavigation({
     hoverCloseTimer.current = window.setTimeout(() => {
       setHoveredId(null);
       hoverCloseTimer.current = null;
-    }, 160);
+    }, 280);
   }
 
   function choose(id: number): void {
