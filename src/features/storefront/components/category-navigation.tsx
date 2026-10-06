@@ -32,7 +32,7 @@ export function CategoryNavigation({
   selectedCategoryId,
   selectCategory,
 }: CategoryNavigationProps): ReactElement {
-  const { t } = useLocale();
+  const { locale } = useLocale();
   const [openId, setOpenId] = useState<number | null>(null);
   const [hoveredId, setHoveredId] = useState<number | null>(null);
   const [menuPosition, setMenuPosition] = useState<MenuPosition>({ left: 0, top: 0, width: 0 });
@@ -113,9 +113,7 @@ export function CategoryNavigation({
   }, [categories, submenuCategory]);
 
   function labelFor(category: CategoryTreeNode): string {
-    const translationKey = `category.${category.slug}`;
-    const translation = t(translationKey);
-    return translation === translationKey ? category.name : translation;
+    return locale === "ar" && category.nameAr ? category.nameAr : category.name;
   }
 
   function cancelHoverClose(): void {

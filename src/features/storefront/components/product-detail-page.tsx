@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useEffect, useState, type ReactElement } from "react";
 import type { Product } from "@/domain/catalog/product";
 import { useLocale } from "@/features/i18n/locale-provider";
-import { Footer } from "@/features/storefront/components/storefront-experience";
+import {
+  CartDrawer,
+  Footer,
+  type CartLine,
+} from "@/features/storefront/components/storefront-experience";
 import { ProductImageGallery } from "@/features/storefront/components/product-image-gallery";
 import { ProductImage } from "@/features/storefront/components/product-image";
 import { formatAedFromCents } from "@/shared/utils/currency";
-
-type CartLine = Product & { quantity: number };
 
 export function ProductDetailPage({
   product,
@@ -19,7 +21,9 @@ export function ProductDetailPage({
   relatedProducts: Product[];
 }): ReactElement {
   const { locale } = useLocale();
-  const [cartQuantity, setCartQuantity] = useState(0);
+  const [cart, setCart] = useState<CartLine[]>([]);
+  const [cartHydrated, setCartHydrated] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const galleryImages = [
     product.imageUrl,
     product.secondaryImageUrl,
@@ -28,6 +32,8 @@ export function ProductDetailPage({
   const hasSale = product.salePriceAedCents !== null && product.salePriceAedCents !== undefined;
   const name = localizedProductName(product, locale);
   const description = localizedProductDescription(product, locale);
+  const cartQuantity = cart.find((line) => line.id === product.id)?.quantity ?? 0;
+  const cartTotal = cart.reduce((total, line) => total + line.priceAedCents * line.quantity, 0);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -35,51 +41,69 @@ export function ProductDetailPage({
         const storedCart = JSON.parse(
           window.sessionStorage.getItem("thashreef-cart") ?? "[]",
         ) as CartLine[];
-        setCartQuantity(storedCart.find((line) => line.id === product.id)?.quantity ?? 0);
+        setCart(Array.isArray(storedCart) ? storedCart : []);
       } catch {
-        setCartQuantity(0);
+        setCart([]);
+      } finally {
+        setCartHydrated(true);
       }
     }, 0);
     return () => window.clearTimeout(timer);
   }, [product.id]);
 
-  function addToCart(): void {
-    const storedCart = window.sessionStorage.getItem("thashreef-cart");
-    let cart: CartLine[] = [];
-    try {
-      cart = storedCart ? (JSON.parse(storedCart) as CartLine[]) : [];
-    } catch {
-      cart = [];
-    }
-    const existing = cart.find((line) => line.id === product.id);
-    if (existing) {
-      setCartQuantity(existing.quantity);
-      return;
-    }
+  useEffect(() => {
+    if (!cartHydrated) return;
+    window.sessionStorage.setItem("thashreef-cart", JSON.stringify(cart));
+  }, [cart, cartHydrated]);
 
-    const nextCart = [...cart, { ...product, quantity: 1 }];
-    window.sessionStorage.setItem("thashreef-cart", JSON.stringify(nextCart));
-    setCartQuantity(1);
+  function addToCart(): void {
+    setCart((lines) => {
+      if (lines.some((line) => line.id === product.id)) return lines;
+      return [...lines, { ...product, quantity: 1 }];
+    });
+  }
+
+  function updateQuantity(productId: string, change: number): void {
+    setCart((lines) =>
+      lines
+        .map((line) =>
+          line.id === productId ? { ...line, quantity: Math.max(0, line.quantity + change) } : line,
+        )
+        .filter((line) => line.quantity > 0),
+    );
   }
 
   return (
     <main className="min-h-screen bg-[#eef5fa] text-[#0a2540]">
-      <div className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex min-h-16 max-w-[1280px] items-center px-4 sm:px-6">
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-xl">
+        <div className="mx-auto flex min-h-16 max-w-[1280px] items-center gap-3 px-4 sm:px-6">
           <Link
-            className="text-sm font-black text-[#0a2540] transition hover:text-[#0e7490]"
+            className="truncate text-sm font-black text-[#0a2540] transition hover:text-[#0e7490]"
             href="/"
           >
-            MARSA EDGE MARINE LLC
+            MARSA EDGE MARINE
           </Link>
           <Link
-            className="ml-auto min-h-11 content-center text-sm font-bold text-slate-600 underline-offset-4 hover:text-[#0e7490] hover:underline"
+            className="hidden min-h-11 content-center text-sm font-bold text-slate-600 underline-offset-4 hover:text-[#0e7490] hover:underline sm:block"
             href="/shop"
           >
-            Continue shopping
+            Browse shop
           </Link>
+          <button
+            aria-label={`Open cart with ${cart.reduce((total, line) => total + line.quantity, 0)} items`}
+            className="relative ml-auto grid size-12 place-items-center rounded-full bg-[#0a2540] text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5 hover:bg-[#0e7490]"
+            onClick={() => setCartOpen(true)}
+            type="button"
+          >
+            <ProductCartIcon />
+            {cart.length > 0 ? (
+              <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-[#f97316] text-[10px] font-black">
+                {cart.reduce((total, line) => total + line.quantity, 0)}
+              </span>
+            ) : null}
+          </button>
         </div>
-      </div>
+      </header>
       <div className="mx-auto max-w-[1280px] px-4 py-7 sm:px-6 sm:py-10">
         <nav aria-label="Breadcrumb" className="text-sm text-slate-500">
           <Link className="hover:text-[#0e7490] hover:underline" href="/">
@@ -167,7 +191,30 @@ export function ProductDetailPage({
         ) : null}
       </div>
       <Footer />
+      {cartOpen ? (
+        <CartDrawer
+          cart={cart}
+          close={() => setCartOpen(false)}
+          total={cartTotal}
+          updateQuantity={updateQuantity}
+        />
+      ) : null}
     </main>
+  );
+}
+
+function ProductCartIcon(): ReactElement {
+  return (
+    <svg aria-hidden="true" fill="none" height="21" viewBox="0 0 24 24" width="21">
+      <path
+        d="M3 4h2l1.7 9.1a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L20 7H6.1"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+      <path d="M9 20h.01M17 20h.01" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
+    </svg>
   );
 }
 

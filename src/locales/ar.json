@@ -3,6 +3,7 @@
   "language.arabic": "ع",
   "header.categories": "الفئات",
   "header.search": "ابحث عن سترات النجاة أو المراسي أو الحبال أو البطاريات أو المضخات أو رمز المنتج",
+  "header.searchMobile": "ابحث عن منتجات أو رمز المنتج",
   "header.quickQuote": "طلب عرض سعر",
   "header.signIn": "تسجيل الدخول",
   "header.logout": "تسجيل الخروج",
@@ -35,5 +36,19 @@
   "category.battery-switches": "مفاتيح البطاريات",
   "category.circuit-breakers": "قواطع الدائرة",
   "category.shore-power": "طاقة الشاطئ",
-  "category.electrical-accessories": "إكسسوارات كهربائية"
+  "category.electrical-accessories": "إكسسوارات كهربائية",
+  "category.selected": "الفئة المختارة",
+  "home.shopByBrand": "تسوّق حسب العلامة التجارية",
+  "home.brandTitle": "شركاء العلامات التجارية والموردون",
+  "home.brandSubtitle": "تسوّق من العلامات التجارية البحرية الموثوقة واعثر على المعدات المناسبة بسرعة.",
+  "home.brandRail": "شركاء العلامات التجارية",
+  "home.shopByCategory": "تسوّق حسب الفئة",
+  "home.categoryTitle": "اعثر على المنتجات المناسبة بسرعة",
+  "home.categorySubtitle": "تصفّح فئات الكتالوج. تقودك كل فئة إلى المنتجات الموجودة في فئاتها الفرعية.",
+  "home.categoryRail": "فئات المنتجات",
+  "home.categories": "الفئات",
+  "home.viewProducts": "عرض المنتجات",
+  "home.viewAll": "عرض كل {category}",
+  "rail.previous": "عرض العناصر السابقة",
+  "rail.next": "عرض المزيد من العناصر"
 }

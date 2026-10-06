@@ -190,8 +190,14 @@ class SqliteDemoStoreRepository implements DemoStoreRepository {
       `UPDATE products SET
         name = :name, name_ar = :nameAr, sku = :sku, brand = :brand, category = :category, category_id = :categoryId,
         description = :description, description_ar = :descriptionAr, image_url = COALESCE(NULLIF(:imageUrl, ''), image_url),
-        secondary_image_url = COALESCE(NULLIF(:secondaryImageUrl, ''), secondary_image_url),
-        tertiary_image_url = COALESCE(NULLIF(:tertiaryImageUrl, ''), tertiary_image_url),
+        secondary_image_url = CASE
+          WHEN :removeSecondaryImage THEN NULL
+          ELSE COALESCE(NULLIF(:secondaryImageUrl, ''), secondary_image_url)
+        END,
+        tertiary_image_url = CASE
+          WHEN :removeTertiaryImage THEN NULL
+          ELSE COALESCE(NULLIF(:tertiaryImageUrl, ''), tertiary_image_url)
+        END,
         regular_price_aed_cents = :regularPriceAedCents, sale_price_aed_cents = :salePriceAedCents,
         price_aed_cents = :priceAedCents, is_featured = :isFeatured, is_new_arrival = :isNewArrival,
         is_top_selling = :isTopSelling, is_best_deal = :isBestDeal, is_banner_product = :isBannerProduct,
@@ -211,6 +217,8 @@ class SqliteDemoStoreRepository implements DemoStoreRepository {
           imageUrl: input.imageUrl?.trim() ?? "",
           secondaryImageUrl: input.secondaryImageUrl?.trim() ?? "",
           tertiaryImageUrl: input.tertiaryImageUrl?.trim() ?? "",
+          removeSecondaryImage: input.removeSecondaryImage ?? false,
+          removeTertiaryImage: input.removeTertiaryImage ?? false,
           regularPriceAedCents: input.regularPriceAedCents,
           salePriceAedCents: input.salePriceAedCents ?? null,
           priceAedCents: input.salePriceAedCents ?? input.regularPriceAedCents,

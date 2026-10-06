@@ -4,6 +4,22 @@
 
 Hostinger's current Node build runner invokes Turbopack by default for `next build`, where it fails before the application compiles because its CSS worker exits unexpectedly. The application therefore explicitly uses Next.js Webpack mode for production builds. This is a build-tool selection only and does not change the runtime database, schema, or uploaded media.
 
+## 2026-10-06 — Prioritize phone browsing and checkout access
+
+The phone header keeps its cart control at the far right, and product-detail pages provide the same cart access so a shopper can open and edit the current session cart without returning to the home page. Phone pagination shows only the essential previous/next, first, current, and final page controls to avoid a tall wrapped control group. Horizontal brand and category rails retain swipe support and observe layout changes before enabling their visible controls. The secondary hero panel is hidden on phones and below-fold product-card images are lazy-loaded to keep the initial mobile view focused and lighter.
+
+## 2026-10-06 — Let staff remove optional product-gallery images
+
+The primary product image remains required. Staff can discard a newly selected Image 2 or Image 3 before saving, or explicitly remove an existing optional image with an on-screen pending-removal confirmation. Uploading a replacement takes precedence over a removal selection. Removal clears the image from that product record without deleting a file that could be shared by another record.
+
+## 2026-10-06 — Support detailed product descriptions up to 800 words
+
+Product descriptions may contain up to 800 whitespace-separated words in English or Arabic. The administrator form shows a live word counter, while the Zod schema repeats the limit on the server so direct form submissions cannot bypass it. The customer product page continues to render the full stored description.
+
+## 2026-10-02 — Use imported Arabic category names and discoverable catalogue rails
+
+Arabic storefront views use the `nameAr` values already stored for every imported category, rather than relying on a small legacy translation-key list. The brand and category rails keep their native horizontal swipe while exposing 44 px previous/next controls for mouse, keyboard, and touch users; the brand rail no longer hides brands after the first 12.
+
 ## 2026-09-28 — Remove the desktop submenu hover gap
 
 Desktop category dropdowns begin directly below their main-category button, with their existing inner spacing retained inside the menu. A slightly longer close grace period protects a deliberate pointer movement into a subcategory, while menus still close promptly when the customer leaves both navigation areas.

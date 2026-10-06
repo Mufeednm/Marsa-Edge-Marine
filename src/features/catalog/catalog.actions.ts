@@ -46,7 +46,15 @@ const uploadImageSchema = z
 
 const productImageSchema = z.object({
   imageFile: uploadImageSchema,
+  removeSecondaryImage: z
+    .string()
+    .nullish()
+    .transform((value) => value === "on"),
   secondaryImageFile: uploadImageSchema,
+  removeTertiaryImage: z
+    .string()
+    .nullish()
+    .transform((value) => value === "on"),
   tertiaryImageFile: uploadImageSchema,
 });
 
@@ -216,6 +224,8 @@ export async function updateProductAction(
     imageUrl: uploadedImage,
     secondaryImageUrl: uploadedSecondaryImage,
     tertiaryImageUrl: uploadedTertiaryImage,
+    removeSecondaryImage: parsedImage.data.removeSecondaryImage && !uploadedSecondaryImage,
+    removeTertiaryImage: parsedImage.data.removeTertiaryImage && !uploadedTertiaryImage,
   });
   if (!result.ok)
     return {
@@ -299,7 +309,9 @@ function productFormValues(formData: FormData) {
 function productImageFormValues(formData: FormData) {
   return {
     imageFile: formData.get("imageFile"),
+    removeSecondaryImage: formData.get("removeSecondaryImage"),
     secondaryImageFile: formData.get("secondaryImageFile"),
+    removeTertiaryImage: formData.get("removeTertiaryImage"),
     tertiaryImageFile: formData.get("tertiaryImageFile"),
   };
 }

@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+export const PRODUCT_DESCRIPTION_MAX_WORDS = 800;
+
+function hasAtMostDescriptionWords(value: string): boolean {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return true;
+
+  return trimmedValue.split(/\s+/).length <= PRODUCT_DESCRIPTION_MAX_WORDS;
+}
+
 export const createProductSchema = z.object({
   brand: z.string().trim().min(2, { error: "Brand must be at least 2 characters long." }),
   homepageOrder: z.coerce.number().int().min(0).default(0),
@@ -28,11 +37,15 @@ export const createProductSchema = z.object({
     .string()
     .trim()
     .min(16, { error: "Description must be at least 16 characters long." })
-    .max(280, { error: "Description must be 280 characters or less." }),
+    .refine(hasAtMostDescriptionWords, {
+      error: `Description must be ${PRODUCT_DESCRIPTION_MAX_WORDS} words or less.`,
+    }),
   descriptionAr: z
     .string()
     .trim()
-    .max(280, { error: "Arabic description must be 280 characters or less." })
+    .refine(hasAtMostDescriptionWords, {
+      error: `Arabic description must be ${PRODUCT_DESCRIPTION_MAX_WORDS} words or less.`,
+    })
     .optional()
     .transform((value) => value || null),
   imageUrl: z

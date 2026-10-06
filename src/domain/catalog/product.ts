@@ -41,6 +41,8 @@ export interface CreateProductInput {
   imageUrl?: string;
   secondaryImageUrl?: string;
   tertiaryImageUrl?: string;
+  removeSecondaryImage?: boolean;
+  removeTertiaryImage?: boolean;
   regularPriceAedCents: number;
   salePriceAedCents?: number | null;
   stockQuantity: number;

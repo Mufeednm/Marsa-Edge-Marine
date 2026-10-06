@@ -3,7 +3,15 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState, type ReactElement } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import type { CategoryTreeNode } from "@/domain/catalog/category";
 import type { Product } from "@/domain/catalog/product";
 import type { Brand, HomepageBanner } from "@/domain/demo-store/demo-store-repository";
@@ -23,7 +31,7 @@ interface StorefrontExperienceProps {
   products: Product[];
 }
 
-type CartLine = Product & { quantity: number };
+export type CartLine = Product & { quantity: number };
 type ProductSort = "featured" | "newest" | "price-high" | "price-low";
 type CatalogPaginationItem = number | "ellipsis";
 
@@ -129,6 +137,7 @@ export function StorefrontExperience({
   categoryTree,
   products,
 }: StorefrontExperienceProps): ReactElement {
+  const { locale, t } = useLocale();
   const shouldReduceMotion = useReducedMotion();
   const [query, setQuery] = useState("");
   const [productSort, setProductSort] = useState<ProductSort>("featured");
@@ -169,8 +178,10 @@ export function StorefrontExperience({
   );
   const selectedCategoryName =
     selectedCategoryId === "all"
-      ? "All products"
-      : (categoryLookup.get(selectedCategoryId)?.name ?? "Selected category");
+      ? t("nav.allProducts")
+      : categoryLookup.get(selectedCategoryId)
+        ? localizedCategoryName(categoryLookup.get(selectedCategoryId)!, locale)
+        : t("category.selected");
   const selectedCategory =
     selectedCategoryId === "all" ? undefined : categoryLookup.get(selectedCategoryId);
   const selectedCategoryIds = useMemo(() => {
@@ -453,7 +464,7 @@ export function StorefrontExperience({
                   onClick={() => selectCategoryAndScroll("all")}
                   type="button"
                 >
-                  All products
+                  {t("nav.allProducts")}
                 </button>
                 {catalogCategoryChoices.map((category) => (
                   <button
@@ -467,7 +478,7 @@ export function StorefrontExperience({
                     onClick={() => selectCategoryAndScroll(category.id)}
                     type="button"
                   >
-                    {category.name}
+                    {localizedCategoryName(category, locale)}
                   </button>
                 ))}
                 <label className="ml-auto flex min-h-11 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600">
@@ -541,7 +552,7 @@ export function StorefrontExperience({
 
       <a
         aria-label="Contact Marsa Edge Marine LLC on WhatsApp"
-        className="fixed bottom-5 left-5 z-20 grid size-14 place-items-center rounded-full border-2 border-white bg-[#25d366] text-white shadow-xl shadow-emerald-950/25 transition hover:-translate-y-0.5 hover:bg-[#1ebe57] focus:outline-none focus:ring-4 focus:ring-[#25d366]/35 sm:bottom-6 sm:left-6"
+        className="fixed bottom-4 right-4 z-20 grid size-12 place-items-center rounded-full border-2 border-white bg-[#25d366] text-white shadow-xl shadow-emerald-950/25 transition hover:-translate-y-0.5 hover:bg-[#1ebe57] focus:outline-none focus:ring-4 focus:ring-[#25d366]/35 sm:bottom-6 sm:right-6 sm:size-14"
         href="https://wa.me/971527035250"
         rel="noreferrer"
         target="_blank"
@@ -575,6 +586,10 @@ export function StorefrontExperience({
 
 function flattenCategoryTree(categoryTree: CategoryTreeNode[]): CategoryTreeNode[] {
   return categoryTree.flatMap((category) => [category, ...flattenCategoryTree(category.children)]);
+}
+
+function localizedCategoryName(category: CategoryTreeNode, locale: "ar" | "en"): string {
+  return locale === "ar" && category.nameAr ? category.nameAr : category.name;
 }
 
 function getDescendantCategoryIds(category?: CategoryTreeNode): number[] {
@@ -617,21 +632,24 @@ function CatalogPagination({
         </span>{" "}
         of <span className="font-black text-[#0a2540]">{totalProducts}</span> products
       </p>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center justify-between gap-2 sm:flex-wrap sm:justify-start">
         <button
           aria-label="Go to previous product page"
-          className="min-h-11 rounded-full border border-slate-200 bg-white px-4 text-sm font-black text-[#0a2540] transition hover:border-[#0e7490] hover:text-[#0e7490] focus:outline-none focus:ring-2 focus:ring-[#0e7490] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-slate-200 disabled:hover:text-[#0a2540]"
+          className="grid size-11 place-items-center rounded-full border border-slate-200 bg-white text-sm font-black text-[#0a2540] transition hover:border-[#0e7490] hover:text-[#0e7490] focus:outline-none focus:ring-2 focus:ring-[#0e7490] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-slate-200 disabled:hover:text-[#0a2540] sm:inline-flex sm:w-auto sm:px-4"
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
           type="button"
         >
-          Previous
+          <span className="sm:hidden" aria-hidden="true">
+            ‹
+          </span>
+          <span className="hidden sm:inline">Previous</span>
         </button>
         {pageItems.map((pageItem, index) =>
           pageItem === "ellipsis" ? (
             <span
               aria-hidden="true"
-              className="grid min-h-11 min-w-8 place-items-center text-sm font-black text-slate-400"
+              className="hidden min-h-11 min-w-8 place-items-center text-sm font-black text-slate-400 sm:grid"
               key={`ellipsis-${index}`}
             >
               …
@@ -641,6 +659,10 @@ function CatalogPagination({
               aria-current={pageItem === currentPage ? "page" : undefined}
               aria-label={`Go to product page ${pageItem}`}
               className={`min-h-11 min-w-11 rounded-full px-3 text-sm font-black transition focus:outline-none focus:ring-2 focus:ring-[#0e7490] focus:ring-offset-2 ${
+                pageItem !== currentPage && pageItem !== 1 && pageItem !== pageCount
+                  ? "hidden sm:inline-flex"
+                  : "inline-flex"
+              } ${
                 pageItem === currentPage
                   ? "bg-[#0a2540] text-white shadow-lg shadow-slate-900/15"
                   : "border border-slate-200 bg-white text-[#0a2540] hover:border-[#0e7490] hover:text-[#0e7490]"
@@ -655,12 +677,15 @@ function CatalogPagination({
         )}
         <button
           aria-label="Go to next product page"
-          className="min-h-11 rounded-full border border-slate-200 bg-white px-4 text-sm font-black text-[#0a2540] transition hover:border-[#0e7490] hover:text-[#0e7490] focus:outline-none focus:ring-2 focus:ring-[#0e7490] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-slate-200 disabled:hover:text-[#0a2540]"
+          className="grid size-11 place-items-center rounded-full border border-slate-200 bg-white text-sm font-black text-[#0a2540] transition hover:border-[#0e7490] hover:text-[#0e7490] focus:outline-none focus:ring-2 focus:ring-[#0e7490] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-slate-200 disabled:hover:text-[#0a2540] sm:inline-flex sm:w-auto sm:px-4"
           disabled={currentPage === pageCount}
           onClick={() => onPageChange(currentPage + 1)}
           type="button"
         >
-          Next
+          <span className="sm:hidden" aria-hidden="true">
+            ›
+          </span>
+          <span className="hidden sm:inline">Next</span>
         </button>
       </div>
     </nav>
@@ -781,7 +806,7 @@ function Header({
         <LanguageToggle />
         <button
           aria-label={t("header.openCart", { count: cartQuantity })}
-          className="relative grid size-12 place-items-center rounded-full bg-[#0a2540] text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5 hover:bg-[#0e7490]"
+          className="relative ml-auto grid size-12 place-items-center rounded-full bg-[#0a2540] text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5 hover:bg-[#0e7490] sm:ml-0"
           onClick={openCart}
           type="button"
         >
@@ -799,7 +824,7 @@ function Header({
         <input
           className="min-w-0 flex-1 bg-transparent px-3 text-sm outline-none placeholder:text-slate-400"
           onChange={(event) => setQuery(event.target.value)}
-          placeholder={t("header.search")}
+          placeholder={t("header.searchMobile")}
           value={query}
         />
       </label>
@@ -834,8 +859,8 @@ function HeroShowcase({
   slideCount: number;
 }): ReactElement {
   return (
-    <section className="relative min-h-[540px] overflow-hidden rounded-[2rem] bg-[#071827] text-white shadow-2xl shadow-slate-950/18">
-      <AnimatePresence mode="wait">
+    <section className="relative min-h-[480px] overflow-hidden rounded-[2rem] bg-[#071827] text-white shadow-2xl shadow-slate-950/18 sm:min-h-[540px]">
+      <AnimatePresence initial={false} mode="wait">
         <motion.div
           animate={{ opacity: 1, scale: 1 }}
           className="absolute inset-0"
@@ -857,12 +882,12 @@ function HeroShowcase({
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(3,18,31,.96)_0%,rgba(3,18,31,.84)_40%,rgba(3,18,31,.38)_64%,rgba(3,18,31,.04)_100%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_8%_100%,rgba(235,105,42,.14),transparent_27%),linear-gradient(180deg,rgba(1,12,23,.05),rgba(1,12,23,.35))]" />
 
-      <div className="relative flex min-h-[540px] flex-col p-6 sm:p-8 lg:p-10">
-        <div className="flex max-w-2xl flex-1 flex-col justify-center py-7 sm:py-10 lg:py-12">
+      <div className="relative flex min-h-[480px] flex-col p-6 sm:min-h-[540px] sm:p-8 lg:p-10">
+        <div className="flex max-w-2xl flex-1 flex-col justify-center py-5 sm:py-10 lg:py-12">
           <motion.p
             animate={{ opacity: 1, y: 0 }}
             className="text-xs font-black tracking-[0.3em] text-cyan-100 uppercase"
-            initial={{ opacity: 0, y: 14 }}
+            initial={false}
             transition={{ duration: 0.35 }}
           >
             {slide.eyebrow}
@@ -870,7 +895,7 @@ function HeroShowcase({
           <motion.h1
             animate={{ opacity: 1, y: 0 }}
             className="mt-5 max-w-xl text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-[3.65rem]"
-            initial={{ opacity: 0, y: 18 }}
+            initial={false}
             transition={{ duration: 0.42, delay: 0.08 }}
           >
             {slide.title}
@@ -878,7 +903,7 @@ function HeroShowcase({
           <motion.p
             animate={{ opacity: 1, y: 0 }}
             className="mt-5 max-w-lg text-base leading-7 text-slate-100 sm:text-lg"
-            initial={{ opacity: 0, y: 18 }}
+            initial={false}
             transition={{ duration: 0.42, delay: 0.14 }}
           >
             {slide.description}
@@ -898,7 +923,7 @@ function HeroShowcase({
           </div>
         </div>
 
-        <div className="mt-auto w-full max-w-md self-end lg:absolute lg:bottom-10 lg:right-10">
+        <div className="mt-auto hidden w-full max-w-md self-end sm:block lg:absolute lg:bottom-10 lg:right-10">
           <div className="rounded-2xl border border-white/15 bg-[#071827]/90 p-4 shadow-2xl shadow-slate-950/35 backdrop-blur-xl">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -931,6 +956,7 @@ function HeroShowcase({
                           className="object-contain p-2"
                           height={180}
                           imageUrl={product.imageUrl}
+                          loading="lazy"
                           sizes="180px"
                           width={180}
                         />
@@ -981,14 +1007,19 @@ function CategoryCarousel({
   categories: CategoryTreeNode[];
   selectCategory: (categoryId: number) => void;
 }): ReactElement {
+  const { locale, t } = useLocale();
   return (
     <section className="mx-auto max-w-[1480px] px-4 py-12 sm:px-6">
       <SectionHeader
-        eyebrow="Shop by category"
-        subtitle="Browse the categories you manage in the catalogue. Each category leads to products in its subcategories."
-        title="Find the right products faster"
+        eyebrow={t("home.shopByCategory")}
+        subtitle={t("home.categorySubtitle")}
+        title={t("home.categoryTitle")}
       />
-      <div className="mt-7 flex snap-x gap-5 overflow-x-auto pb-4 [scrollbar-width:none]">
+      <ScrollableRail
+        ariaLabel={t("home.categoryRail")}
+        nextLabel={t("rail.next")}
+        previousLabel={t("rail.previous")}
+      >
         {categories.map((category) => (
           <motion.button
             className="group relative h-64 w-[290px] shrink-0 snap-start overflow-hidden rounded-[1.75rem] bg-slate-900 text-left shadow-lg shadow-slate-900/10"
@@ -1000,7 +1031,7 @@ function CategoryCarousel({
           >
             {category.bannerImageUrl ? (
               <Image
-                alt={category.name}
+                alt={localizedCategoryName(category, locale)}
                 className="object-cover transition duration-500 group-hover:scale-105"
                 fill
                 sizes="290px"
@@ -1012,19 +1043,19 @@ function CategoryCarousel({
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/88 via-slate-950/25 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-              <p className="text-xl font-black">{category.name}</p>
-              {category.nameAr ? (
+              <p className="text-xl font-black">{localizedCategoryName(category, locale)}</p>
+              {locale === "en" && category.nameAr ? (
                 <p className="mt-1 text-sm text-slate-200" dir="rtl">
                   {category.nameAr}
                 </p>
               ) : null}
               <span className="mt-4 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-black backdrop-blur">
-                View products
+                {t("home.viewProducts")}
               </span>
             </div>
           </motion.button>
         ))}
-      </div>
+      </ScrollableRail>
       {categories.length === 0 ? (
         <p className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">
           Categories appear here only when Show in Shop by category is selected in the admin
@@ -1032,6 +1063,101 @@ function CategoryCarousel({
         </p>
       ) : null}
     </section>
+  );
+}
+
+function ScrollableRail({
+  ariaLabel,
+  children,
+  nextLabel,
+  previousLabel,
+}: {
+  ariaLabel: string;
+  children: ReactNode;
+  nextLabel: string;
+  previousLabel: string;
+}): ReactElement {
+  const railRef = useRef<HTMLDivElement | null>(null);
+  const [canScroll, setCanScroll] = useState({ next: false, previous: false });
+
+  useLayoutEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const railElement = rail;
+    let animationFrame = 0;
+    let retryTimer = 0;
+
+    function updateControls(): void {
+      setCanScroll({
+        next: railElement.scrollLeft + railElement.clientWidth < railElement.scrollWidth - 1,
+        previous: railElement.scrollLeft > 1,
+      });
+    }
+
+    function scheduleControlUpdate(): void {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(updateControls);
+    }
+
+    scheduleControlUpdate();
+    retryTimer = window.setTimeout(updateControls, 250);
+    railElement.addEventListener("scroll", updateControls, { passive: true });
+    window.addEventListener("resize", scheduleControlUpdate);
+    const resizeObserver = new ResizeObserver(scheduleControlUpdate);
+    resizeObserver.observe(railElement);
+    const mutationObserver = new MutationObserver(scheduleControlUpdate);
+    mutationObserver.observe(railElement, { childList: true, subtree: true });
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(retryTimer);
+      railElement.removeEventListener("scroll", updateControls);
+      window.removeEventListener("resize", scheduleControlUpdate);
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+    };
+  }, []);
+
+  function scroll(direction: "next" | "previous"): void {
+    const rail = railRef.current;
+    if (!rail) return;
+    rail.scrollBy({
+      behavior: "smooth",
+      left: (direction === "next" ? 1 : -1) * Math.max(rail.clientWidth * 0.8, 280),
+    });
+  }
+
+  return (
+    <div className="mt-7">
+      <div className="mb-3 flex items-center justify-end gap-2">
+        <button
+          aria-label={previousLabel}
+          className="grid size-11 place-items-center rounded-full border border-slate-200 bg-white text-[#0a2540] shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={!canScroll.previous}
+          onClick={() => scroll("previous")}
+          type="button"
+        >
+          <ChevronIcon direction="previous" />
+        </button>
+        <button
+          aria-label={nextLabel}
+          className="grid size-11 place-items-center rounded-full border border-slate-200 bg-white text-[#0a2540] shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={!canScroll.next}
+          onClick={() => scroll("next")}
+          type="button"
+        >
+          <ChevronIcon direction="next" />
+        </button>
+      </div>
+      <div
+        aria-label={ariaLabel}
+        className="flex snap-x gap-4 overflow-x-auto scroll-smooth pb-4 [scrollbar-width:none]"
+        ref={railRef}
+        role="region"
+        tabIndex={0}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -1156,7 +1282,7 @@ function ProductCard({
           className="h-full w-full object-contain p-7 transition duration-300 group-hover:scale-105"
           height={640}
           imageUrl={product.imageUrl}
-          loading={index > 3 ? "lazy" : "eager"}
+          loading="lazy"
           width={640}
         />
         <div className="absolute left-4 top-4 rounded-full bg-[#0a2540] px-3 py-1 text-[10px] font-black text-white shadow-sm">
@@ -1210,16 +1336,20 @@ function ProductCard({
 }
 
 function BrandLogoCarousel({ brands }: { brands: Brand[] }): ReactElement {
-  const { locale } = useLocale();
+  const { locale, t } = useLocale();
   return (
     <section className="mx-auto max-w-[1480px] px-4 pb-12 sm:px-6">
       <SectionHeader
-        eyebrow="Shop by brand"
-        subtitle="Shop trusted marine brands and find the right equipment faster."
-        title="Supplier and brand partners"
+        eyebrow={t("home.shopByBrand")}
+        subtitle={t("home.brandSubtitle")}
+        title={t("home.brandTitle")}
       />
-      <div className="mt-7 flex snap-x gap-4 overflow-x-auto pb-4 [scrollbar-width:none]">
-        {brands.slice(0, 12).map((brand, index) => (
+      <ScrollableRail
+        ariaLabel={t("home.brandRail")}
+        nextLabel={t("rail.next")}
+        previousLabel={t("rail.previous")}
+      >
+        {brands.map((brand, index) => (
           <Link
             aria-label={`Shop ${locale === "ar" && brand.nameAr ? brand.nameAr : brand.name} products`}
             className="flex h-36 w-56 shrink-0 snap-start flex-col items-center justify-center rounded-[1.5rem] border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:-translate-y-1 hover:border-cyan-300 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#0e568f]"
@@ -1249,7 +1379,7 @@ function BrandLogoCarousel({ brands }: { brands: Brand[] }): ReactElement {
             </span>
           </Link>
         ))}
-      </div>
+      </ScrollableRail>
     </section>
   );
 }
@@ -1303,7 +1433,7 @@ function WhyChooseUs(): ReactElement {
   );
 }
 
-function CartDrawer({
+export function CartDrawer({
   cart,
   close,
   total,
@@ -1562,6 +1692,7 @@ function MobileMenu({
   selectedCategoryId: number | "all";
   selectCategory: (categoryId: number | "all") => void;
 }): ReactElement {
+  const { locale, t } = useLocale();
   const selectedRootCategoryId =
     typeof selectedCategoryId === "number"
       ? categoryTree.find(
@@ -1590,9 +1721,9 @@ function MobileMenu({
         transition={{ duration: 0.24, ease: "easeOut" }}
       >
         <div className="flex items-center justify-between">
-          <p className="text-lg font-black text-[#0a2540]">Categories</p>
+          <p className="text-lg font-black text-[#0a2540]">{t("home.categories")}</p>
           <button
-            aria-label="Close menu"
+            aria-label={t("nav.closeMenu")}
             className="grid size-11 place-items-center rounded-full bg-slate-50"
             onClick={close}
             type="button"
@@ -1602,7 +1733,7 @@ function MobileMenu({
         </div>
         <div className="mt-5 grid gap-3">
           <button
-            className={`min-h-12 rounded-2xl px-4 text-left text-sm font-black ${
+            className={`min-h-12 rounded-2xl px-4 text-start text-sm font-black ${
               selectedCategoryId === "all"
                 ? "bg-[#0e7490] text-white"
                 : "bg-slate-50 text-slate-700"
@@ -1613,12 +1744,12 @@ function MobileMenu({
             }}
             type="button"
           >
-            All products
+            {t("nav.allProducts")}
           </button>
           {categoryTree.map((category) => (
             <div className="rounded-2xl bg-slate-50 p-3" key={category.id}>
               <button
-                className={`min-h-11 w-full rounded-xl px-3 text-left text-sm font-black ${
+                className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-xl px-3 text-start text-sm font-black ${
                   selectedRootCategoryId === category.id
                     ? "bg-[#0e7490] text-white"
                     : "text-[#0a2540]"
@@ -1629,23 +1760,24 @@ function MobileMenu({
                 }
                 type="button"
               >
-                {category.name}
+                <span>{localizedCategoryName(category, locale)}</span>
+                <MobileMenuChevron expanded={expandedCategoryId === category.id} />
               </button>
               {expandedCategoryId === category.id ? (
                 <div className="mt-2 grid gap-1">
                   <button
-                    className="min-h-10 rounded-xl px-3 text-left text-xs font-black text-[#0e7490]"
+                    className="min-h-10 rounded-xl px-3 text-start text-xs font-black text-[#0e7490]"
                     onClick={() => {
                       selectCategory(category.id);
                       close();
                     }}
                     type="button"
                   >
-                    View all {category.name}
+                    {t("home.viewAll", { category: localizedCategoryName(category, locale) })}
                   </button>
                   {category.children.map((subcategory) => (
                     <button
-                      className={`min-h-10 rounded-xl px-3 text-left text-xs font-bold ${
+                      className={`min-h-10 rounded-xl px-3 text-start text-xs font-bold ${
                         selectedCategoryId === subcategory.id
                           ? "bg-[#0e7490] text-white shadow-sm"
                           : "text-slate-600"
@@ -1657,7 +1789,7 @@ function MobileMenu({
                       }}
                       type="button"
                     >
-                      {subcategory.name}
+                      {localizedCategoryName(subcategory, locale)}
                     </button>
                   ))}
                 </div>
@@ -1699,6 +1831,25 @@ function MobileMenu({
         </div>
       </motion.aside>
     </motion.div>
+  );
+}
+
+function MobileMenuChevron({ expanded }: { expanded: boolean }): ReactElement {
+  return (
+    <svg
+      aria-hidden="true"
+      className={`size-4 shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`}
+      fill="none"
+      viewBox="0 0 16 16"
+    >
+      <path
+        d="m3 6 5 5 5-5"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
   );
 }
 
@@ -1899,6 +2050,24 @@ function CloseIcon(): ReactElement {
       viewBox="0 0 24 24"
     >
       <path d="m6 6 12 12M18 6 6 18" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ direction }: { direction: "next" | "previous" }): ReactElement {
+  const isNext = direction === "next";
+  return (
+    <svg
+      aria-hidden="true"
+      className="size-5 rtl:rotate-180"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      viewBox="0 0 24 24"
+    >
+      <path d={isNext ? "m9 18 6-6-6-6" : "m15 18-6-6 6-6"} />
     </svg>
   );
 }

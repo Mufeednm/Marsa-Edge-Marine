@@ -37,3 +37,8 @@ Make every product in a category available locally instead of stopping after the
 
 - Removed the visual/pointer gap between a main category and its portal-rendered submenu.
 - Extended the submenu close grace period so a customer can move naturally into a subcategory without the menu disappearing.
+
+## Follow-up: Arabic categories and browse rails
+
+- Used the imported `nameAr` fields across the storefront's category navigation, cards, and catalogue filters when Arabic is selected.
+- Made the brand and category rails discoverable with labelled previous/next controls while retaining horizontal swipe, and removed the previous 12-brand display limit.

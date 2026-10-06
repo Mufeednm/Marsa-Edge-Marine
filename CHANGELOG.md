@@ -6,6 +6,14 @@
 
 - Add swipe, previous/next arrow, thumbnail, and accessible image-count controls to multi-image product galleries.
 
+- Improve the phone storefront: keep the cart on the right and available on product pages, compact catalogue pagination, make horizontal rails recalculate their controls after layout changes, add visible mobile-menu expand indicators, and defer below-fold product-card images.
+
+- Let administrators remove a selected or existing second or third product-gallery image directly from the product editor, or replace it with a new upload.
+
+- Expand the English and Arabic administrator product descriptions from 280 characters to 800 words, with an in-form word counter and matching server-side validation.
+
+- Render imported Arabic category names consistently across desktop navigation, mobile navigation, category cards, and catalogue filters. Add visible previous/next controls to the brand and category rails while preserving native swipe, and show every brand instead of only the first 12.
+
 - Keep desktop category submenus open while the pointer moves from a main category into its subcategory menu.
 
 - Keep category filtering focused after a selection: show the selected main category and its subcategories in the catalogue controls, and use the storefront blue active state in desktop and mobile category navigation.

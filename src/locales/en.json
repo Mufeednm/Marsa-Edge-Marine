@@ -3,6 +3,7 @@
   "language.arabic": "AR",
   "header.categories": "Categories",
   "header.search": "Search life jackets, anchors, ropes, batteries, pumps or SKU",
+  "header.searchMobile": "Search products or SKU",
   "header.quickQuote": "Quick quote",
   "header.signIn": "Sign in",
   "header.logout": "Logout",
@@ -35,5 +36,19 @@
   "category.battery-switches": "Battery Switches",
   "category.circuit-breakers": "Circuit Breakers",
   "category.shore-power": "Shore Power",
-  "category.electrical-accessories": "Electrical Accessories"
+  "category.electrical-accessories": "Electrical Accessories",
+  "category.selected": "Selected category",
+  "home.shopByBrand": "Shop by brand",
+  "home.brandTitle": "Supplier and brand partners",
+  "home.brandSubtitle": "Shop trusted marine brands and find the right equipment faster.",
+  "home.brandRail": "Brand partners",
+  "home.shopByCategory": "Shop by category",
+  "home.categoryTitle": "Find the right products faster",
+  "home.categorySubtitle": "Browse the categories you manage in the catalogue. Each category leads to products in its subcategories.",
+  "home.categoryRail": "Product categories",
+  "home.categories": "Categories",
+  "home.viewProducts": "View products",
+  "home.viewAll": "View all {category}",
+  "rail.previous": "Show previous items",
+  "rail.next": "Show more items"
 }
