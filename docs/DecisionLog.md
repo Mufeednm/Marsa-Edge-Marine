@@ -1,5 +1,9 @@
 # Decision Log
 
+## 2026-10-23 — Charge AED 30 for UAE delivery below the free-delivery threshold
+
+UAE orders below AED 700 incur an AED 30 delivery fee; orders of AED 700 or more remain eligible for free UAE delivery. A domain-level calculation is shared by the checkout display, Cash on Delivery order route, and Stripe Checkout route so the customer-visible amount and stored or charged amount cannot drift.
+
 ## 2026-09-28 — Use Webpack for Hostinger production builds
 
 Hostinger's current Node build runner invokes Turbopack by default for `next build`, where it fails before the application compiles because its CSS worker exits unexpectedly. The application therefore explicitly uses Next.js Webpack mode for production builds. This is a build-tool selection only and does not change the runtime database, schema, or uploaded media.

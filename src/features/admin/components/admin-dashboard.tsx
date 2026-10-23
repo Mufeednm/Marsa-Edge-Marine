@@ -32,7 +32,7 @@ export function AdminDashboard({ products }: AdminDashboardProps): ReactElement 
     <div className="min-h-screen bg-[#f6f8fb] text-slate-900">
       <div className="border-b border-slate-200 bg-[#102846] text-white">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between px-5 py-3 lg:px-8">
-          <p className="text-sm font-medium">Free UAE delivery on orders over AED 500</p>
+          <p className="text-sm font-medium">Free UAE delivery on orders of AED 700 or more</p>
           <div className="hidden items-center gap-5 text-xs text-slate-300 sm:flex">
             <span>UAE / AED</span>
             <span>Help centre</span>

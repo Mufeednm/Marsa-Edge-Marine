@@ -3,6 +3,7 @@ import { z } from "zod";
 import { restoreSessionUser } from "@/application/auth/auth-service";
 import { getServerEnvironment } from "@/config/env";
 import { formatCustomerOrderNumber } from "@/domain/orders/customer-order-number";
+import { calculateUaeDeliveryFeeAedCents } from "@/domain/orders/delivery-pricing";
 import { readSessionUser } from "@/infrastructure/auth/session-cookie";
 import { createDemoStoreRepository } from "@/infrastructure/demo-store/file-demo-store-repository";
 import { getStripeClient } from "@/infrastructure/payments/stripe-client";
@@ -57,7 +58,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       (sum, line) => sum + (line.product?.priceAedCents ?? 0) * line.quantity,
       0,
     );
-    const shipping = subtotal >= 70000 ? 0 : 2000;
+    const shipping = calculateUaeDeliveryFeeAedCents(subtotal);
     const order = await repository.createOrder({
       customerEmail: user.email,
       customerName: user.name,

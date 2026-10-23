@@ -8,6 +8,7 @@ import {
   type OrderEmailDelivery,
 } from "@/infrastructure/email/smtp-order-email-sender";
 import { formatCustomerOrderNumber } from "@/domain/orders/customer-order-number";
+import { calculateUaeDeliveryFeeAedCents } from "@/domain/orders/delivery-pricing";
 import { isValidInternationalPhone } from "@/shared/utils/phone";
 
 const orderSchema = z.object({
@@ -57,7 +58,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       (sum, line) => sum + (line.product?.priceAedCents ?? 0) * line.quantity,
       0,
     );
-    const shipping = subtotal >= 70000 ? 0 : 2000;
+    const shipping = calculateUaeDeliveryFeeAedCents(subtotal);
     const order = await repository.createOrder({
       customerEmail: user.email,
       customerName: user.name,

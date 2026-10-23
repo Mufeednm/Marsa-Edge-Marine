@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Increase the delivery fee below the AED 700 free-delivery threshold from AED 20 to AED 30, with one shared calculation used by checkout, Cash on Delivery, and Stripe orders.
+
 - Use Webpack explicitly for production builds, avoiding a Hostinger Turbopack process failure while compiling the existing global CSS.
 
 - Add swipe, previous/next arrow, thumbnail, and accessible image-count controls to multi-image product galleries.
