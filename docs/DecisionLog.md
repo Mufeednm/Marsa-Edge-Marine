@@ -1,8 +1,8 @@
 # Decision Log
 
-## 2026-10-23 — Charge AED 30 for UAE delivery below the free-delivery threshold
+## 2026-10-23 — Charge AED 35 for UAE delivery below the free-delivery threshold
 
-UAE orders below AED 700 incur an AED 30 delivery fee; orders of AED 700 or more remain eligible for free UAE delivery. A domain-level calculation is shared by the checkout display, Cash on Delivery order route, and Stripe Checkout route so the customer-visible amount and stored or charged amount cannot drift.
+UAE orders below AED 700 incur an AED 35 delivery fee; orders of AED 700 or more remain eligible for free UAE delivery. A domain-level calculation is shared by the checkout display, Cash on Delivery order route, and Stripe Checkout route so the customer-visible amount and stored or charged amount cannot drift.
 
 ## 2026-09-28 — Use Webpack for Hostinger production builds
 

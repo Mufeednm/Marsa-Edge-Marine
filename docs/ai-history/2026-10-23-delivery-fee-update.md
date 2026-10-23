@@ -2,12 +2,12 @@
 
 ## Request
 
-Increase the charge for delivery below the free-delivery threshold from AED 20 to AED 30.
+Increase the charge for delivery below the free-delivery threshold from AED 20 to AED 35.
 
 ## Change
 
 - Retained free UAE delivery for orders of AED 700 or more.
-- Changed the fee below AED 700 to AED 30.
+- Changed the fee below AED 700 to AED 35.
 - Added a single domain pricing function and used it in checkout, the Cash on Delivery order route, and the Stripe Checkout route.
 - Corrected the outdated AED 500 free-delivery message in the administrator dashboard.
 

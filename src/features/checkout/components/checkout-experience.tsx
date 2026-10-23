@@ -758,7 +758,7 @@ function OrderSummary({
         />
       </dl>
       <p className="mt-4 rounded-xl bg-white/10 px-3 py-2 text-xs leading-5 text-slate-200">
-        Free UAE delivery on orders of AED 700 or more. AED 30 delivery applies below AED 700.
+        Free UAE delivery on orders of AED 700 or more. AED 35 delivery applies below AED 700.
       </p>
       <div className="mt-5 flex justify-between text-lg font-black">
         <span>Total</span>
